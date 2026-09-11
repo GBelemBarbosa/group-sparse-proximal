@@ -1,0 +1,867 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[english]{babel}
+\usepackage{microtype}
+\usepackage{geometry}
+\geometry{margin=2.4cm}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[colorlinks,citecolor=blue!50!black,linkcolor=blue!50!black]{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\newcommand{\eqjust}[1]{\qquad\eqref{#1}}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{example}{Example}
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}
+
+\newcommand*\R{\mathbb{R}}
+\newcommand*\N{\mathbb{N}}
+\newcommand*\x{\mathbf{x}}
+\newcommand*\U{\mathbf{u}}
+\newcommand*\y{\mathbf{y}}
+\newcommand*\z{\mathbf{z}}
+\newcommand*\V{\mathbf{v}}
+\newcommand*\bv{\mathbf{b}}
+\newcommand*\A{\mathbf{A}}
+\newcommand*\prox{\operatorname{prox}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand*{\norm}[1]{\|#1\|}
+
+\algnewcommand{\Input}[1]{\textbf{Input:} #1}
+\algnewcommand{\Output}[1]{\textbf{Output:} #1}
+
+\title{The group-sparse proximal mapping\\with lower and upper cardinality bounds}
+\author{Gabriel Belém Barbosa\thanks{IMECC, University of Campinas (UNICAMP).
+\texttt{gggt4@ime.unicamp.br}}
+\and Paulo J.\ S.\ Silva\thanks{IMECC, University of Campinas (UNICAMP).}}
+\date{September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study composite minimization of a smooth objective plus a group-\(\ell_0\)
+regularizer, subject to both an upper and a \emph{lower} bound on the number of
+active groups. The lower bound models diversification or coverage constraints
+that the classical cardinality-constrained formulation (\(l=0\)) cannot
+express. The main result is a complete characterization of the proximal mapping
+of the resulting discontinuous regularizer, extending
+\cite[Theorem~3.2]{beck2018}. In particular, we identify the set of
+activatable groups, prove that \(\prox_h\) is empty precisely when fewer than \(l\) groups can
+be activated, and give an explicit description of every proximal point together
+with an algorithm that computes one. The argument follows the comparison
+strategy of \cite{beck2018} for \(\omega_{[l]}>2\lambda\), and treats the new case \(\omega_{[l]}\le 2\lambda\) by a separate sandwich of
+supports and an explicit reconstruction of the witnessing index sets.
+\end{abstract}
+
+\noindent\textbf{Keywords:}
+group sparsity; \(\ell_0\) regularization; proximal mapping; cardinality
+constraints; composite optimization.
+
+\section{Introduction}
+\label{sec:intro}
+
+Group sparsity comprises optimization problems whose decision variable is
+partitioned into disjoint blocks (groups), and in which one wishes to limit or
+penalize the number of nonzero groups. The structure arises whenever
+explanatory variables are highly correlated and must be treated jointly, or
+when the model itself imposes a predetermined grouping
+\cite{yuan2006,simon2013,beck2018}. Standard applications include
+portfolio construction,
+imaging and signal processing, total-variation denoising, compressed sensing
+\cite{donoho2006}, and low-rank approximation; see \cite{beck2018} and the
+references therein.
+
+The generic proximal mapping of \cite{beck2018} covers a penalty on the number
+of active groups together with an \emph{upper} bound \(s\) on that number. We enlarge the class slightly by introducing a \emph{lower}
+bound \(l\) as well. The extra constraint controls the maximal sparsity of a
+solution and is useful whenever a minimum level of diversification is
+required: one should not concentrate a portfolio on a handful of sectors
+\cite{brodie2009,beck2018}. Even when the floor is only a target rather
+than a hard modelling constraint, specifying \(l\) is more convenient than
+tuning \(\lambda\) until the recovered support meets a desired minimum size:
+the constraint enforces the cardinality directly, and the grid of candidate
+penalties can be cut accordingly. The aim of this paper is a closed form for the proximal calculus
+of the resulting regularizer and that can be used as a black box inside
+forward--backward methods \cite{moreau1962,beckbook}.
+
+\paragraph{Contributions.}
+We characterize \(\prox_h\) for
+\[
+h(\x)=\lambda\|g(\x)\|_0+\delta_{B\cap C_{l,s}}(\x),
+\]
+where \(C_{l,s}\) is the set of vectors with between \(l\) and \(s\) active
+groups and \(B\) is a product of closed group-wise constraints (each group may
+be set to the origin). The new analytical points are:
+\begin{itemize}[leftmargin=1.4em,itemsep=0.25em]
+\item the \emph{activatable} index set \(I_{\mathcal{A}}(\x)\), on which all
+order statistics of the Beck--Hallak gains \(\omega(\x)\) are computed;
+\item emptiness of \(\prox_h\) if and only if \(l\ge 1\) and
+\(|I_{\mathcal{A}}(\x)|<l\);
+\item a two-case description of the active support of a proximal solution, according to the position
+of the \(l\)-th order statistic \(\omega(\x)_{[l]}\) relative to the threshold
+\(2\lambda\);
+\item a closed-form family \(\mathcal{T}(\x)\) of admissible supports and an
+algorithm that returns one proximal point (or reports emptiness).
+\end{itemize}
+When \(\omega(\x)_{[l]}>2\lambda\) the argument is conceptually the same as
+\cite[Theorem~3.2]{beck2018}. When \(\omega(\x)_{[l]}\le 2\lambda\) one must
+force additional zero or negative gain groups in order to meet the lower bound \(l\); that
+case has no counterpart for \(l=0\).
+
+\section{Problem formulation}
+\label{sec:problem}
+
+Fix a partition \(\{G_i\}_{i=1}^m\) of \(\{1,2,\ldots,n\}\) into \(m\) groups
+of sizes \(n_1,\ldots,n_m\). After a harmless reindexing,
+\[
+\begin{aligned}
+G_1 & \coloneqq\left\{1,2, \ldots, n_1\right\}, G_2\coloneqq\left\{n_1+1, n_1+2, \ldots, n_1+n_2\right\}, \ldots, \\
+G_m & \coloneqq\left\{n_{m-1}+1, n_{m-1}+2, \ldots, n\right\} .
+\end{aligned}
+\]
+For \(\x\in\R^n\) and \(T\subset \{1,\ldots,n\}\), write \(\x_T\) for the
+subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\) that
+marks nonempty groups is
+$$
+g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \mathbf{0}, \\
+0, & \text{otherwise }\end{cases}.
+$$
+Thus \(g(\x)_i=1\) means that group \(G_i\) is \emph{active} for \(\x\);
+otherwise it is \emph{inactive}. For \(l,s\in \N_0\) with \(l\leq s\leq m\),
+$$
+C_{l,s}\coloneqq\left\{\x \in \R^n:l\leq\|g(\x)\|_0 \leq s\right\}
+$$
+is the set of vectors with at least \(l\) and at most \(s\) active groups.
+Ordinary (ungrouped) sparsity is the special case in which every group is a
+singleton, so that \(C_{l,s}\) consists of the \(s\)-sparse vectors with at
+least \(l\) nonzero entries.
+
+The problem under study is
+\begin{equation}
+\tag{P0}
+\label{P0}
+\begin{aligned}
+&\min&& f(\x)+\lambda\|g(\x)\|_0 \\
+&\operatorname{s.t.}&& \x \in C_{l,s} \cap B,
+\end{aligned}
+\end{equation}
+where \(\lambda \geq 0\) is a penalty parameter, \(f: \R^n \to \R\) is
+continuously differentiable and bounded from below, and
+\begin{equation}
+\label{B}
+B \coloneqq \prod_{i=1}^m\left(D_i \cup\{\mathbf{0}\}\right)=\left(D_1 \cup\{\mathbf{0}\}\right) \times\left(D_2 \cup\{\mathbf{0}\}\right) \times \cdots \times\left(D_m \cup\{\mathbf{0}\}\right),
+\end{equation}
+with each \(D_i \subset \R^{n_i}\) nonempty and closed. This problem is equivalent, in
+composite unconstrained form,
+\begin{equation}
+\label{P}
+\min _{\x \in \R^n} f(\x)+h(\x),
+\end{equation}
+with
+\begin{equation}
+\label{h}
+h(\x) \coloneqq\lambda\|g(\x)\|_0+\delta_{B \cap C_{l,s}}(\x).
+\end{equation}
+Problem~\eqref{P} has the familiar shape of proximal composite optimization.
+The proximal mapping of \(h\)
+\begin{equation}
+\label{prox}
+\begin{aligned}
+\prox_{h}(\x)&\coloneqq\argmin_{\U\in\R^n}\left\{h(\U)+ \frac{1}{2}\norm{\U-\x}^2 \right\}
+\end{aligned}
+\end{equation}
+was characterized in \cite{beck2018} for \(l=0\). \Cref{thm:proxh} below
+extends that characterization to \(l\leq s\).
+
+\section{Motivating examples}
+\label{sec:examples}
+
+\begin{example}[sector-constrained portfolio]
+\label{ex:carteira}
+Following \cite{beck2018}, consider mean--variance allocation with a bound on
+the number of sectors that may receive capital,
+\begin{equation}
+\begin{aligned}
+&\min&& \gamma \cdot \x^T \mathbf{C} \x-\boldsymbol{\mu}^T \x \\
+&\operatorname{s.t.}&& \x \in C_{l,s} \cap \Delta_n
+\end{aligned}.
+\end{equation}
+Here \(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns,
+\(\mathbf{C} \in \R^{n \times n}\) is a covariance matrix, \(\gamma>0\) trades
+off risk against return, and
+$$\Delta_n=\left\{\x \in \R^n\mid \x \geq \mathbf{0},\ \sum_{i=1}^n \x_i=1\right\}$$
+is the unit simplex. Decision variables are already grouped by sector. An
+upper bound \(s\) limits concentration; a positive lower bound \(l\)
+enforces a minimal diversification
+across sectors, in the same spirit as sparse Markowitz models
+\cite{brodie2009}.
+\end{example}
+
+\begin{example}[cardinality-constrained sparse regression]
+\label{ex:imbuia}
+An instance of \eqref{P} with singleton groups is
+\begin{equation}
+\label{regress2}
+\min_{\x\in\R^n}\frac{1}{2}\|\A\x-\bv\|^2+\lambda\|\x\|_0+\delta_{C_{l,s}}(\x),
+\end{equation}
+with \(\A\in \R^{m\times n}\) and \(\bv\in \R^m\).
+The formulation was motivated by infrared spectroscopy on the IMBUIA
+beamline (SIRIUS/LNLS), where a sparse spectrogram is recovered from
+measurements.
+If a prior estimate of the number of spectral lines is available --- from
+previous experiments or from the literature --- it can be encoded as the
+lower bound \(l\), so that the \(\ell_0\) penalty is not free to discard
+known structure.
+\end{example}
+
+\section{Notation}
+\label{sec:notation}
+
+We first present a few auxiliary objects. Given \(\V \in \R^m\) and
+\(i=1,2,\ldots,m\), \(\V_{[i]}\) denotes the \(i\)-th largest entry of
+\(\V\), so that \(\V_{[1]}\geq \V_{[2]}\geq\hdots\geq\V_{[m]}\). The family
+\begin{equation}\label{defS}
+    \mathcal{S}_i(\V)\coloneqq\{S \cup T\mid S\coloneqq\{j\mid\V_j>\V_{[i]}\},\ T\subset\{j\mid\V_j=\V_{[i]}\},\ | S \cup T | = i\}\quad \forall i=1,2,\ldots,m
+ \end{equation}
+collects every index set of cardinality \(i\) associated with the largest
+entries of \(\V\). The set \(\mathcal{S}_i(\V)\) need not be a singleton,
+since \(\V\) may have ties. For instance, if \(\V = (0\ 0\ 1)^T\), then
+\(\mathcal{S}_2(\V) = \{\{1,3\},\{2,3\}\}\), where
+\(S=\{j\mid\V_j>\V_{[2]}\}=\{3\}\) and the admissible subsets of
+\(\{j\mid\V_j=\V_{[2]}\}\) are \(T=\{1\}\) and \(T=\{2\}\).
+
+Given \(\x \in \R^n\), the orthogonal projection onto a set \(C\subset\R^n\)
+is
+$$
+P_C(\x)\coloneqq \prox_{\delta_C}(\x)=\argmin_{\y\in C}\|\y-\x\|_2,
+$$
+and the distance to \(D_i\) is
+$$
+d_{D_i}\left(\x_{G_i}\right)\coloneqq\min _{\z \in D_i}\left\|\x_{G_i}-\z\right\|_2\quad \forall i=1,2, \ldots, m .
+$$
+The latter is well defined because each \(D_i\) is closed. The gain map
+\(\omega: \R^n \to \R^m\),
+\begin{equation}
+\label{omega}
+\omega(\x)_i\coloneqq\left\|\x_{G_i}\right\|_2^2-d_{D_i}^2\left(\x_{G_i}\right)\quad \forall i=1,2, \ldots, m,
+\end{equation}
+governs which groups are activated by \(\prox_h\).
+
+The support of a vector (its set of active-group indices) is
+$$I_1(\x)\coloneqq\left\{i \in\{1,2, \ldots, m\}\mid g(\x)_i=1\right\}.$$
+The origin is always feasible for every group, through
+\(B=\prod_i(D_i\cup\{\mathbf{0}\})\). Activating group \(i\), however,
+requires a point of \(D_i\setminus\{\mathbf{0}\}\). This motivates the set of
+\emph{activatable} groups
+\begin{equation}
+\label{Iativ}
+I_{\mathcal{A}}(\x)\coloneqq\bigl\{i\in\{1,2,\ldots,m\}\mid P_{D_i}(\x_{G_i})\setminus\{\mathbf{0}\}\neq\emptyset\bigr\}.
+\end{equation}
+If \(\mathbf{0}\) is an accumulation point of \(D_i\) and the unique nearest
+point is the origin---for example \(D_1=[0,1]\) and \(\x=\mathbf{0}\)---then
+\(i\notin I_{\mathcal{A}}(\x)\): the minimum over \(D_i\setminus\{\mathbf{0}\}\)
+is not attained, so that group cannot contribute a block of a proximal point.
+
+\begin{lemma}\label{lem:ativavel}
+Let \(\x\in\R^n\) and \(i\in\{1,2,\ldots,m\}\). If \(\omega(\x)_i\neq 0\), then
+\(i\in I_{\mathcal{A}}(\x)\).
+\end{lemma}
+\begin{proof}
+Since \(D_i\) is closed, \(P_{D_i}(\x_{G_i})\) is nonempty and \(\omega(\x)_i\) well defined. If \(\omega(\x)_i>0\), then \(d_{D_i}(\x_{G_i})<\|\x_{G_i}\|_2\), hence
+\(\mathbf{0}\notin P_{D_i}(\x_{G_i})\), therefore
+\(P_{D_i}(\x_{G_i})\setminus\{\mathbf{0}\}\neq\emptyset\). If
+\(\omega(\x)_i<0\), then \(d_{D_i}(\x_{G_i})>\|\x_{G_i}\|_2\), which forces
+\(\mathbf{0}\notin D_i\). Thus \(P_{D_i}(\x_{G_i})\subset D_i\) does not
+contain the origin.
+\end{proof}
+A point of \(D_i\) strictly closer than the origin would yield
+\(\omega(\x)_i>0\). Consequently, if \(\omega(\x)_i=0\), the origin already
+realizes the distance to \(D_i\cup\{\mathbf{0}\}\); one has
+\(i\in I_{\mathcal{A}}(\x)\) only when \(P_{D_i}(\x_{G_i})\) contains another
+point \emph{at the same} distance.
+
+When applied to \(\omega(\x)\), the order statistics and the sets
+are taken over \(I_{\mathcal{A}}(\x)\): \(\omega(\x)_{[k]}\) is
+the \(k\)-th largest value in
+\(\{\omega(\x)_i\mid i\in I_{\mathcal{A}}(\x)\}\), and
+\(\mathcal{S}_k(\omega(\x))\) is \eqref{defS} for that subvector. Likewise,
+$$I_{a}^{\stackrel{?}{=}}(\x)\coloneqq\left\{i\in I_{\mathcal{A}}(\x)\mid \omega(\x)_i\stackrel{?}{=}a\right\},$$
+where \(\stackrel{?}{=}\) stands for an arbitrary relation, and \(a\in\R\) may
+also be written as \([i]\) to mean \(\omega(\x)_{[i]}\). We write
+\(s'\coloneqq\min\{s,|I_{\mathcal{A}}(\x)|\}\).
+
+For an index set \(T\subset\{1,2,\ldots,n\}\), the matrix \(\mathbf{U}_T\)
+consists of the columns of \(\mathbf{I}_n\) indexed by \(T\), and we write
+$$
+\mathcal{A}(T)\coloneqq\bigcup_{i\in T} G_i
+$$
+and
+$$
+\mathcal{B}(T)\coloneqq \prod_{i\in T}D_i.
+$$
+
+The following identity is \cite[Lemma~3.1]{beck2018}.
+
+\begin{lemma}\label{lem:toomega}
+Let \(\x \in \R^n\) and \(T, S \subset\{1,2, \ldots, m\}\). Then, for all
+\(\z, \y \in \R^n\) satisfying
+$$
+\z_{G_i} \in\left\{\begin{array} { l l }
+{ P _ { D _ { i } } ( \x _ { G _ { i } } ) , } & { i \in T  } \\
+{ \{ \mathbf { 0 } \} , } & { i \notin T  }
+\end{array}, \quad \y _ { G _ { i } } \in \left\{\begin{array}{ll}
+P_{D_i}\left(\x_{G_i}\right), & i \in S \\
+\{\mathbf{0}\}, & i \notin S
+\end{array}\right.\right.,
+$$
+one has
+$$
+\|\z-\x\|_2^2-\|\y-\x\|_2^2=\sum_{i \in S} \omega(\x)_i-\sum_{i \in T} \omega(\x)_i .
+$$
+\end{lemma}
+
+\section{When the proximal mapping is empty}
+\label{sec:empty}
+
+\begin{proposition}\label{prop:empty}
+One has \(\prox_h(\x)=\emptyset\) if and only if \(l\geq 1\) and
+\(|I_{\mathcal{A}}(\x)|<l\).
+\end{proposition}
+\begin{proof}
+If \(\U\in\prox_h(\x)\), then for
+\(i\in I_1(\U)\) one has \(\U_{G_i}\neq\mathbf{0}\) and \(\U_{G_i}\in P_{D_i}(\x_{G_i})\), otherwise a better solution of the problem defining \(\prox_h(\x)\) could be
+obtained with a smaller quadratic term and the same active groups. A group with
+\(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\) cannot be activated, thus \(I_1(\U)\subset I_{\mathcal{A}}(\x)\). Since \(|I_1(\U)|\geq l\), it follows that
+\(|I_{\mathcal{A}}(\x)|\geq l\).
+
+Conversely, if \(|I_{\mathcal{A}}(\x)|\geq l\) or \(l=0\),
+take \(T\subset I_{\mathcal{A}}(\x)\) maximizing
+\(\sum_{i\in T}\bigl(\omega(\x)_i-2\lambda\bigr)\) subject to
+\(l\leq |T|\leq s'\) (so \(T=\emptyset\) is admissible when \(l=0\)), and set
+\(\U_{G_i}\in P_{D_i}(\x_{G_i})\setminus\{\mathbf{0}\}\) for \(i\in T\) and
+\(\U_{G_i}=\mathbf{0}\) otherwise. Then \(\U\in B\cap C_{l,s}\) and, by
+\Cref{lem:toomega},
+\[
+\|\U-\x\|_2^2+2\lambda\|g(\U)\|_0=\|\x\|_2^2-\sum_{i\in T}\bigl(\omega(\x)_i-2\lambda\bigr).
+\]
+Any \(\y\in B\cap C_{l,s}\) with \(S=I_1(\y)\subset I_{\mathcal{A}}(\x)\)
+satisfies
+\[
+\|\y-\x\|_2^2+2\lambda\|g(\y)\|_0\geq\|\x\|_2^2-\sum_{i\in S}\bigl(\omega(\x)_i-2\lambda\bigr),
+\]
+because \(\y_{G_i}\in D_i\setminus\{\mathbf{0}\}\) for \(i\in S\), and
+equality in \Cref{lem:toomega} requires the projections. The set \(S\) also
+obeys \(l\leq |S|\leq s'\), hence, by construction,
+\[
+\sum_{i\in T}\bigl(\omega(\x)_i-2\lambda\bigr)\geq\sum_{i\in S}\bigl(\omega(\x)_i-2\lambda\bigr).
+\]
+A support leaving \(I_{\mathcal{A}}(\x)\) does not attain the minimum.
+Therefore \(\U\in\prox_h(\x)\).
+\end{proof}
+
+\section{Characterization of the proximal mapping}
+\label{sec:prox}
+
+We now characterize \(\prox_{h}\) for variable \(l\). The argument follows
+\cite[Theorem~3.2]{beck2018} closely: the same comparison of gains is used,
+and the first half of the proof, corresponding to \(\omega(\x)_{[l]}> 2\lambda\),
+is conceptually identical to the \(l=0\) case, up to a few details.
+
+\begin{theorem}\label{thm:proxh}
+Let \(\x \in \R^n\).
+If \(|I_{\mathcal{A}}(\x)|<l\), then \(\prox_h(\x)=\emptyset\). If
+\(|I_{\mathcal{A}}(\x)|\geq l\), then \(\U \in \prox_h(\x)\) if and only if
+the following conditions hold:
+\begin{enumerate}[label=(\alph*)]
+    \item \(\U_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\ \forall i \in I_1(\U)\);
+    \item If \(\omega(\x)_{[l]}> 2\lambda\) or \(l=0\), \(\exists T \in \mathcal{S}_{s'}(\omega(\x))\) such that
+\begin{equation}
+\label{T1}
+    T \cap I_{2\lambda}^>(\x) \subset I_1(\U) \subset T \cap I_{2\lambda}^\geq(\x),
+\end{equation}
+and if \(\omega(\x)_{[l]}\leq 2\lambda\) and \(l\geq 1\), \(\exists T \in \mathcal{S}_{l-1}(\omega(\x))\), \(i\in I^=_{[l]}(\x)\setminus T\) and
+$$
+U\in
+\begin{cases}
+    \left\{W \subset I_{2 \lambda}^{=}(x) \backslash(T \cup\{i\})\mid |W| =\min \bigl\{\bigl|I_{2 \lambda}^=(\x)\setminus(T\cup\{i\})\bigr|, s'-l\bigr\}\right\},&\omega(\x)_{[l]}=2\lambda\\
+    \{\emptyset\},&\omega(\x)_{[l]}<2\lambda
+\end{cases}
+$$
+such that
+\begin{equation}
+\label{T2}
+T\cup \{i\}\subset I_1(\U)\subset T\cup\{i\}\cup U.
+\end{equation}
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+The case \(|I_{\mathcal{A}}(\x)|<l\) is \Cref{prop:empty}. From now on,
+\(|I_{\mathcal{A}}(\x)|\geq l\).
+Suppose that \(\U\) satisfies (a) and (b), and let
+\(\y \in \prox_{h}(\x)\).
+We will show that \(\U \in \prox_h(\x)\) and that \(\y\)
+satisfies (a) and \eqref{T1} or \eqref{T2} (as appropriate) for some
+\(\tilde{T}\) and, if needed, \(\tilde{U}\), defined as in (b). Note that, by
+(a), \(\U\in B\), and by (b), \(\U\in C_{l,s}\) (this will be checked in more
+detail for each case). Therefore, since \(\y \in \prox_h(\x)\)
+(hence also \(\y\in B\cap C_{l,s}\)),
+\begin{equation}
+\label{proxy}
+    2 \lambda\left(\|g(\U)\|_0-\|g(\y)\|_0\right)+\|\U-\x\|_2^2-\|\y-\x\|_2^2 \geq 0 .
+\end{equation}
+Plainly, \(\y_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\) \(\forall i \in I_1(\y)\)
+(otherwise a better solution of the problem defining
+\(\prox_h(\x)\) could be obtained with the same active groups)
+and, by hypothesis, \(\U_i \in P_{D_i}\left(\x_{G_i}\right)\ \forall i \in I_1(\U)\).
+Hence, by \Cref{lem:toomega}, \eqref{proxy} is the same as
+$$
+\sum_{i \in I_1(\y)}\left(\omega(\x)_i-2 \lambda\right)-\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) \geq 0,
+$$
+which in turn is equivalent to
+\begin{equation}
+\label{main1}
+\begin{aligned}
+&\sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\y) \cap I^<_{2\lambda}(\x)}\left(\omega(\x)_i-2 \lambda\right)\\
+&\qquad-\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) \geq 0 .
+\end{aligned}
+\end{equation}
+
+We first treat the first case of (b). The case \(l=0\) is
+\cite[Theorem~3.2]{beck2018}. If \(l\geq 1\), \eqref{T1} indeed yields
+\(l\leq |I_1(\U)|\leq s'\), since \(|T \cap I_{2\lambda}^>(\x)|\geq l\)
+because \(\omega(\x)_{[l]}> 2\lambda\), and \(|T|=s'\) by \eqref{defS}.
+
+Any indices of \(I_1(\U)\) that lie in \(I_{2\lambda}^=(\x)\) do not change the sum, hence by \eqref{T1}
+$$
+\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in T \cap I_{2\lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in T \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right) .
+$$
+Since \(T\) contains indices of a set of the \(s'\) largest entries of
+\(\omega(\x)\) and \(\y\) has at most \(s\) active groups (because
+\(\y \in C_{l,s}\)), one obtains
+$$
+\sum_{i \in T \cap I_{2\lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right) \geq \sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right) .
+$$
+Combining the last two relations yields
+\begin{equation}
+\label{ubest}
+\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) \geq \sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right) .
+\end{equation}
+
+Using the elementary inequality
+\begin{equation}
+\label{negat}
+    \sum_{i \in I_1(\y) \cap I^<_{2\lambda}(\x)}\left(\omega(\x)_i-2 \lambda\right) \leq 0
+\end{equation}
+together with \eqref{ubest} gives
+\begin{equation}
+    \label{desig}
+\begin{aligned}
+0 & \geq \sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)-\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) \\
+& \geq \sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\y) \cap I^<_{2\lambda}(\x)}\left(\omega(\x)_i-2 \lambda\right) \\
+& \qquad-\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) \\
+& \geq 0. \eqjust{main1}
+\end{aligned}
+\end{equation}
+Thus the chain \eqref{desig} holds as a chain of equalities, and therefore
+\eqref{proxy} holds as an equality as well, which implies
+\(\U \in \prox_h(\x)\) by the definition \eqref{prox}. The fact
+that \eqref{desig} is a chain of equalities also implies
+$$
+\sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right)
+$$
+and
+$$
+\sum_{i \in I_1(\y) \cap I^<_{2\lambda}(\x)}\left(\omega(\x)_i-2 \lambda\right)=0,
+$$
+which is equivalent to \(I_1(\y) \cap I^<_{2\lambda}(\x)=\emptyset\) by
+negativity of the summands. The last two relations in turn imply
+$$
+\sum_{i \in I_1(\y)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) .
+$$
+
+It remains to exhibit \(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) such that
+\eqref{T1} holds with \(\U\) replaced by \(\y\).
+One already has \(I_1(\y)\cap I_{2\lambda}^<(\x)=\emptyset\),
+\(l\leq |I_1(\y)|\leq s'\)
+and by the above equation
+\[
+\sum_{i\in I_1(\y)\cap I_{2\lambda}^>(\x)}\bigl(\omega(\x)_i-2\lambda\bigr)=\sum_{i\in T\cap I_{2\lambda}^>(\x)}\bigl(\omega(\x)_i-2\lambda\bigr).
+\]
+The terms in \(I_{2\lambda}^>(\x)\) are strictly positive and those in
+\(I_{2\lambda}^=(\x)\) vanish.
+
+If \(\omega(\x)_{[s']}>2\lambda\), then \(T\cap I_{2\lambda}^>(\x)=T\) has
+cardinality \(s'\) and realizes the maximal sum among subsets of \(s'\)
+indices. A proper subset of \(I_{2\lambda}^>(\x)\), or the swap of an index
+in \(I_{2\lambda}^>(\x)\) for one in \(I_{2\lambda}^=(\x)\), strictly
+decreases the sum. Hence \(I_1(\y)\cap I_{2\lambda}^>(\x)\in\mathcal{S}_{s'}(\omega(\x))\)
+and \(|I_1(\y)\cap I_{2\lambda}^>(\x)|=s'\), which forces
+\(I_1(\y)\subset I_{2\lambda}^>(\x)\). Take \(\tilde{T}\coloneqq I_1(\y)\). Then
+\(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) and
+\(\tilde{T}\cap I_{2\lambda}^>(\x)=I_1(\y)=\tilde{T}\cap I_{2\lambda}^\geq(\x)\).
+
+If \(\omega(\x)_{[s']}=2\lambda\), every set in \(\mathcal{S}_{s'}(\omega(\x))\)
+contains \(I_{2\lambda}^>(\x)\), hence
+\(T\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\). Equality of the positive
+sums forces \(I_1(\y)\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\). Together with
+\(I_1(\y)\cap I_{2\lambda}^<(\x)=\emptyset\), this yields
+\(I_{2\lambda}^>(\x)\subset I_1(\y)\subset I_{2\lambda}^\geq(\x)\). Since
+\(|I_1(\y)|\leq s'\) and \(|I_{2\lambda}^\geq(\x)|\geq s'\), there exists
+\(W\subset I_{2\lambda}^=(\x)\) with \(I_1(\y)\setminus I_{2\lambda}^>(\x)\subset W\)
+and \(|W|=s'-|I_{2\lambda}^>(\x)|\). Take
+\(\tilde{T}\coloneqq I_{2\lambda}^>(\x)\cup W\). Then
+\(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) and
+\(\tilde{T}\cap I_{2\lambda}^>(\x)\subset I_1(\y)\subset \tilde{T}\cap I_{2\lambda}^\geq(\x)\).
+
+If \(\omega(\x)_{[s']}<2\lambda\), again
+\(T\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\) and equality of the positive
+sums gives \(I_{2\lambda}^>(\x)\subset I_1(\y)\subset I_{2\lambda}^\geq(\x)\). Any
+\(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) satisfies
+\(\tilde{T}\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\) and
+\(\tilde{T}\cap I_{2\lambda}^\geq(\x)=I_{2\lambda}^\geq(\x)\), so \eqref{T1}
+holds for \(\y\).
+
+In all subcases, \(|I_1(\y)|\geq l\): if \(\omega(\x)_{[s']}>2\lambda\) one has
+\(|I_1(\y)|=s'\geq l\); in the others, \(I_{2\lambda}^>(\x)\subset I_1(\y)\) and
+\(|I_{2\lambda}^>(\x)|\geq l\) because \(\omega(\x)_{[l]}>2\lambda\) (or
+\(l=0\)).
+Finally, as already observed, \(\y_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\)
+\(\forall i \in I_1(\y)\), so (a) also holds for \(\y\).
+
+We now treat the second case of (b), in which \(\omega(\x)_{[l]}\leq 2\lambda\).
+Indeed, \eqref{T2} gives \(l\leq |I_1(\U)|\leq s'\), since
+\(|T\cup \{i\}|=l\) by \eqref{defS}, and \(|T\cup\{i\}\cup U|\leq s'\) because
+\(|U|\leq s'-l\) by construction of \(U\).
+
+If \(\omega(\x)_{[l]}=2\lambda\), one has \(I_{[l]}^>(\x)=I_{2\lambda}^>(\x)\)
+and \(|I_{2\lambda}^>(\x)|\leq l-1\). Since \(T\in\mathcal{S}_{l-1}(\omega(\x))\),
+every index of \(I_{2\lambda}^>(\x)\) is among the \(l-1\) largest, hence
+\(I_{2\lambda}^>(\x)\subset T\). By \eqref{T2},
+\(I_1(\U)\setminus I_{2\lambda}^>(\x)\subset I_{2\lambda}^=(\x)\), and therefore
+\(I_{2\lambda}^>(\x)\subset I_1(\U)\subset I_{2\lambda}^\geq(\x)\). The terms
+in \(I_{2\lambda}^=(\x)\) vanish, whence
+\[
+\sum_{i\in I_1(\U)}\bigl(\omega(\x)_i-2\lambda\bigr)=\sum_{i\in I_{2\lambda}^>(\x)}\bigl(\omega(\x)_i-2\lambda\bigr)\geq\sum_{i\in I_1(\y)\cap I_{2\lambda}^>(\x)}\bigl(\omega(\x)_i-2\lambda\bigr).
+\]
+Together with \eqref{negat} and \eqref{main1}, the chain \eqref{desig} holds
+again and is satisfied as equality. Thus \(\U\in\prox_h(\x)\),
+\(I_1(\y)\cap I_{2\lambda}^<(\x)=\emptyset\), and equality of the positive
+sums forces \(I_{2\lambda}^>(\x)\subset I_1(\y)\). One obtains
+\(I_{2\lambda}^>(\x)\subset I_1(\y)\subset I_{2\lambda}^\geq(\x)\) and, since
+\(\y\in C_{l,s}\), \(l\leq |I_1(\y)|\leq s'\).
+
+It remains to exhibit \(\tilde{T}\in\mathcal{S}_{l-1}(\omega(\x))\),
+\(\tilde{\imath}\in I^=_{[l]}(\x)\setminus\tilde{T}\) and \(\tilde{U}\) as in
+\eqref{T2} such that \eqref{T2} holds with \(\U\) replaced by \(\y\). Since
+\(|I_1(\y)|\geq l>|I_{2\lambda}^>(\x)|\), the set \(I_1(\y)\cap I_{2\lambda}^=(\x)\) is
+nonempty. Pick \(\tilde{\imath}\) in that set and
+\(\tilde{T}\subset I_1(\y)\setminus\{\tilde{\imath}\}\) containing
+\(I_{2\lambda}^>(\x)\) with \(|\tilde{T}|=l-1\). Then
+\(\tilde{T}\in\mathcal{S}_{l-1}(\omega(\x))\) and
+\(\tilde{\imath}\in I^=_{[l]}(\x)\setminus\tilde{T}\). The residual
+\(I_1(\y)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\) lies in
+\(I_{2\lambda}^=(\x)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\) and has
+cardinality \(|I_1(\y)|-l\leq s'-l\). Hence there exists
+\(\tilde{U}\subset I_{2\lambda}^=(\x)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\)
+with \(I_1(\y)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\subset\tilde{U}\) and
+\(|\tilde{U}|=\min\bigl\{\bigl|I_{2\lambda}^=(\x)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\bigr|,s'-l\bigr\}\).
+Therefore
+\(\tilde{T}\cup\{\tilde{\imath}\}\subset I_1(\y)\subset\tilde{T}\cup\{\tilde{\imath}\}\cup\tilde{U}\).
+As already observed, \(\y_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\)
+\(\forall i \in I_1(\y)\), so (a) also holds for \(\y\).
+
+Now suppose \(\omega(\x)_{[l]}<2\lambda\). By (b) and \eqref{T2},
+\(I_1(\U)=T\cup\{i\}\in\mathcal{S}_l(\omega(\x))\) has cardinality \(l\),
+hence \(I_1(\U)\cap I_{[l]}^<(\x)=\emptyset\), and
+\begin{equation}
+\label{ubest2}
+\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\U)\cap I_{2\lambda}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right).
+\end{equation}
+
+By (b) again, since \(T\) contains indices of a set of the \(l-1\) largest
+entries of \(\omega(\x)\), one has \(I_{2\lambda}^>(\x)\subset I_1(\U)\), and
+then
+\begin{equation}
+    \label{greaterind}
+    |I_1(\U) \cap I_{2\lambda}^>(\x)|=|I_{2\lambda}^>(\x)|\geq |I_1(\y) \cap I_{2\lambda}^>(\x)|.
+\end{equation}
+The same reasoning yields \(I^=_{2\lambda}(\x)\subset I_1(\U)\) and therefore
+\begin{equation}
+    \label{greaterind2}
+    |I_1(\U) \cap I_{2\lambda}^{=}(\x)|=|I_{2\lambda}^{=}(\x)|\geq |I_1(\y) \cap I_{2\lambda}^{=}(\x)|.
+\end{equation}
+In particular, from \eqref{greaterind} and positivity of the summands,
+\begin{equation}
+\label{2lineq}
+\sum_{i \in I_1(\U)\cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right) \geq \sum_{i \in I_1(\y)\cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right).
+\end{equation}
+
+Since by construction in this case \(|I_1(\U)|= l\) (\(U=\emptyset\) in
+\eqref{T2}) and \(|I_1(\y)|\geq l\) (\(\y\in C_{l,s}\)), one has
+\begin{align*}
+    |I_1(\U) \cap I_{2\lambda}^>(\x)|+|I_1(\y) \cap I_{2\lambda}^\leq(\x)|
+    &\geq|I_1(\y) \cap I_{2\lambda}^>(\x)|+|I_1(\y) \cap I_{2\lambda}^\leq(\x)| \eqjust{greaterind}\\
+    &=|I_1(\y)|
+    \\&\geq |I_1(\U)|
+    \\&=|I_1(\U) \cap I_{2\lambda}^>(\x)|+|I_1(\U)\cap I_{2\lambda}^\leq(\x)\cap I_{[l]}^\geq(\x)| ,
+\end{align*}
+or equivalently,
+\begin{equation}
+    \label{inddiff}
+    |I_1(\y) \cap I_{2\lambda}^\leq(\x)|\geq |I_1(\U)\cap I_{2\lambda}^\leq(\x)\cap I_{[l]}^\geq(\x)|.
+\end{equation}
+
+Since
+\(|I_1(\y)\cap I_{2\lambda}^<(\x)|=|\bigl(I_1(\y)\cap I_{2\lambda}^\leq(\x)\bigr)|-|\bigl(I_1(\y)\cap I_{2\lambda}^=(\x)\bigr)|\)
+(and likewise for \(\U\)), the inequality above on the first term and
+\eqref{greaterind2} on the second yield in particular
+\begin{equation}
+    \label{inddiff2}
+    |I_1(\y) \cap I_{2\lambda}^<(\x)|\geq |I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x)|.
+\end{equation}
+That is, \(I_1(\y)\) may have to include indices from \(I_{[l]}^\leq(\x)\),
+because
+\(I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^>(\x)=I_{2\lambda}^<(\x)\cap I_{[l]}^>(\x)\)
+by construction (\(T\in\mathcal{S}_{l-1}(\omega (\x))\) and
+\(T\subset I_1(\U)\)). One therefore obtains
+\begin{equation}
+\label{full}
+\sum_{i \in I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)
+\geq \sum_{i \in I_1(\y) \cap I_{2\lambda}^<(\x)}\left(\omega(\x)_i-2 \lambda\right)
+\eqjust{inddiff2},
+\end{equation}
+where it was also used that
+\(\omega(\x)_{i}\geq \omega(\x)_j\ \forall i\in I^\geq_{[l]}(\x),\ j\in I^\leq_{[l]}(\x)\).
+
+One may now form the chain of inequalities
+\begin{equation}\label{lastchain}
+\begin{aligned}
+0 & \geq \sum_{i \in I_1(\y)\cap I_{2 \lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)-\sum_{i \in I_1(\U)\cap I_{2 \lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)
+\eqjust{2lineq} \\
+& =\sum_{i \in I_1(\y)\cap I_{2 \lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)-\sum_{i \in I_1(\U)\cap I_{2 \lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right) \\
+& \geq \sum_{i \in I_1(\y)\cap I_{2 \lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\y) \cap I^<_{2 \lambda}(\x)}\left(\omega(\x)_i-2 \lambda\right)
+\eqjust{full} \\
+& \qquad-\sum_{i \in I_1(\U)\cap I_{2 \lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)- \sum_{i \in I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)\\
+& =\sum_{i \in I_1(\y)\cap I_{2 \lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\y) \cap I^<_{2 \lambda}(\x)}\left(\omega(\x)_i-2 \lambda\right)
+\eqjust{ubest2} \\
+& \qquad-\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) \\
+& \geq 0. \eqjust{main1}
+\end{aligned}
+\end{equation}
+
+Hence the chain holds with equality, which implies, for the second term in
+particular,
+\begin{equation}
+    \label{greatereq}
+\sum_{i \in I_1(\y)\cap I_{2 \lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\U)\cap I_{2 \lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right),
+\end{equation}
+and consequently, since \(I_{2\lambda}^>(\x)\subset I_1(\U)\),
+\begin{equation}\label{greatereq2}
+    I_1(\y)\cap I_{2 \lambda}^>(\x)=I_1(\U)\cap I_{2 \lambda}^>(\x).
+\end{equation}
+
+For the last term of \eqref{lastchain}, \eqref{greatereq} also yields
+(omitting the vanishing summands on \(I_{2\lambda}^=(\x)\))
+\begin{equation}
+\label{forcedeq}
+\sum_{i \in I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)= \sum_{i \in I_1(\y) \cap I_{2\lambda}^<(\x)}\left(\omega(\x)_i-2 \lambda\right).
+\end{equation}
+Since
+\(I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^>(\x)=I_{2\lambda}^<(\x)\cap I_{[l]}^>(\x)\),
+the case
+\(|I_1(\y) \cap I_{2\lambda}^<(\x)|> |I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x)|\)
+would imply
+\(|I_1(\y) \cap I_{[l]}^\leq(\x)|>|I_1(\U) \cap I_{[l]}^=(\x)|\), that is,
+\(\y\) would need smaller elements than \(\U\) in the sum in order to obtain
+\(|I_1(\y) \cap I_{2\lambda}^<(\x)|> |I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x)|\).
+In that event \eqref{full} would hold as a strict inequality. By contradiction
+with the equality \eqref{forcedeq}, one concludes
+\(|I_1(\y) \cap I_{2\lambda}^<(\x)|= |I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x)|\).
+Again from \eqref{forcedeq}, this implies
+$$
+\sum_{i \in I_1(\y) \cap I^<_{[l]}(\x)}\left(\omega(\x)_i-2 \lambda\right)=0.
+$$
+Moreover, the latter relation and the negativity of the summands on
+\(I_1(\y) \cap I^<_{[l]}(\x)\) guarantee
+\begin{equation}\label{ylesser}
+    I_1(\y) \cap I^<_{[l]}(\x)=\emptyset.
+\end{equation}
+In view of the last display, \eqref{greatereq2} and \(|I_1(\y)|\geq l\), and
+recalling that \(I^=_{2\lambda}(\x)\subset I_1(\U)\), one is left with
+\begin{equation}\label{yequals}
+\begin{aligned}
+|I_1(\y) \cap I^=_{2\lambda}(\x)|
+&= |I_1(\U) \cap I^=_{2\lambda}(\x)|
+= |I^=_{2\lambda}(\x)|, \\
+I_1(\y) \cap I^=_{2\lambda}(\x)
+&= I_1(\U) \cap I^=_{2\lambda}(\x)
+= I^=_{2\lambda}(\x).
+\end{aligned}
+\end{equation}
+
+Using \eqref{greatereq2}, \eqref{ylesser} and \eqref{yequals}, the sum over
+\(I_1(\y)\) reduces to
+$$
+\sum_{i \in I_1(\y) }\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\y)\cap I_{2\lambda}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\y)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right),
+$$
+which finally produces the chain of equalities
+\begin{align*}
+\sum_{i \in I_1(\y) }\left(\omega(\x)_i-2 \lambda\right)&=
+    \sum_{i \in I_1(\y)\cap I_{2\lambda}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\y)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)\\
+    &=\sum_{i \in I_1(\U)\cap I_{2\lambda}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\y)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)
+    \eqjust{greatereq}\\
+    &=\sum_{i \in I_1(\U)\cap I_{2\lambda}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)+\sum_{i \in I_1(\U)\cap I_{2\lambda}^<(\x)\cap I_{[l]}^\geq(\x) }\left(\omega(\x)_i-2 \lambda\right)
+    \eqjust{forcedeq}\\
+    &=\sum_{i \in I_1(\U) }\left(\omega(\x)_i-2 \lambda\right). \eqjust{ubest2}
+\end{align*}
+
+Finally, \eqref{proxy} also holds as an equality, which implies
+\(\U \in \prox_h(\x)\).
+It remains to exhibit \(\tilde{T}\in\mathcal{S}_{l-1}(\omega(\x))\),
+\(\tilde{\imath}\in I^=_{[l]}(\x)\setminus\tilde{T}\) and
+\(\tilde{U}=\emptyset\) such that \eqref{T2} holds with \(\U\) replaced by
+\(\y\). From \eqref{greatereq2}, \eqref{ylesser}
+and \eqref{yequals},
+\(I_{2\lambda}^>(\x)\cup I_{2\lambda}^=(\x)\subset I_1(\y)\subset I_{[l]}^\geq(\x)\)
+and \(|I_1(\y)|\geq l\). If \(|I_1(\y)|>l\), some index of \(I_1(\y)\) would have
+\(\omega(\x)_i-2\lambda<0\) and could be removed, contradicting equality of
+the sums with \(I_1(\U)\). Hence \(|I_1(\y)|=l\). If there existed
+\(j\in I_{[l]}^>(\x)\setminus I_1(\y)\), some \(k\in I_1(\y)\cap I^=_{[l]}(\x)\) would
+satisfy \(\omega(\x)_k=\omega(\x)_{[l]}<\omega(\x)_j\); the swap would
+increase the sum, again a contradiction. Hence \(I_{[l]}^>(\x)\subset I_1(\y)\) and
+\(I_1(\y)\in\mathcal{S}_l(\omega(\x))\). Since \(|I_{[l]}^>(\x)|\leq l-1\), the set
+\(I_1(\y)\cap I^=_{[l]}(\x)\) is nonempty. Pick \(\tilde{\imath}\) in that set,
+\(\tilde{T}\coloneqq I_1(\y)\setminus\{\tilde{\imath}\}\) and
+\(\tilde{U}\coloneqq\emptyset\). Then
+\(\tilde{T}\in\mathcal{S}_{l-1}(\omega(\x))\),
+\(\tilde{\imath}\in I^=_{[l]}(\x)\setminus\tilde{T}\) and
+\(I_1(\y)=\tilde{T}\cup\{\tilde{\imath}\}\).
+As already discussed, \(\y\) also satisfies (a), which completes the proof.
+\end{proof}
+
+\section{Closed form and a computational scheme}
+\label{sec:closed}
+
+The previous result yields an explicit description of \(\prox_h\).
+If \(|I_{\mathcal{A}}(\x)|<l\), then \(\prox_h(\x)=\emptyset\). Otherwise,
+$$
+\prox_h(\x)=\left\{\mathbf{U}_{\mathcal{A}(T)} \y\mid \y \in P_{\mathcal{B}(T)}\left(\x_{\mathcal{A}(T)}\right),\ T\in\mathcal{T}(\x)\right\},
+$$
+where
+$$
+\mathcal{T}(\x)=
+\begin{cases}\left\{T\mid I_{[s']}^>({\x}) \subsetneq T \subset I_{[s']}^\geq({\x}),\ |T|=s'\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s']}>2 \lambda \\
+\left\{T\mid I_{[s']}^>({\x}) \subset T \subset I_{[s']}^\geq({\x}),\ |T| \leq s'\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s']}=2 \lambda \\
+\left\{T\mid I_{2\lambda}^>({\x}) \subset T \subset I_{2\lambda}^\geq({\x}),\ |T| < s'\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s']}<2 \lambda
+\\\left\{T\mid I_{[l]}^>({\x}) \subsetneq T \subset I_{[l]}^\geq({\x}),\ l\leq|T| \leq s'\right\}, &\ \omega(\x)_{[l]}=2 \lambda  \\
+\left\{T\mid I_{[l]}^>({\x}) \subsetneq T \subset I_{[l]}^\geq({\x}),\ |T|=l\right\}, &\ \omega(\x)_{[l]}<2 \lambda
+\end{cases}.
+$$
+This description suggests the following procedure for computing one element of
+\(\prox_h\). The algorithm evaluates \(I_{\mathcal{A}}(\x)\), returns
+\(\emptyset\) if fewer than \(l\) groups are activatable, and selects
+\(\mathcal{S}_{s'}(\omega(\x))\) or \(\mathcal{S}_l(\omega(\x))\).
+
+\begin{algorithm}[ht]
+\caption{Group-sparse proximal mapping}
+\label{alg:proxh}
+\Input{\(\x\in\R^n\),\ \(l\leq s\leq m\) and \(\lambda \in \R\)}\\
+\Output{\(\U\in\prox_h(\x)\) or \(\emptyset\)}
+    \begin{algorithmic}[1]
+    \State compute \(I_{\mathcal{A}}(\x)\)
+    \If{\(l\geq 1\) \textbf{and} \(|I_{\mathcal{A}}(\x)|<l\)}
+        \State \Return \(\emptyset\)
+    \EndIf
+    \State \(s'\gets\min\{s,|I_{\mathcal{A}}(\x)|\}\)
+    \State compute \(S\in \mathcal{S}_{s'}(\omega(\x))\) (arbitrarily chosen)
+\If{\(\omega(\x)_{[l]} >2\lambda\)}
+\State \(T\gets\{i\in S\mid\omega(\x)_i >2\lambda\}\)
+\Else
+\State use \(S\) to compute \(T\in \mathcal{S}_l(\omega(\x))\)
+\EndIf
+\State \(\U\gets \mathbf{U}_{\mathcal{A}(T)} P_{\mathcal{B}(T)}\left(\x_{\mathcal{A}(T)}\right)\)
+\end{algorithmic}
+\end{algorithm}
+
+\begin{remark}
+If \(\omega(\x)_{[l]} \leq 2\lambda\), it is enough to compute a selection
+\(T\in\mathcal{S}_l(\omega(\x))\) of \(l\) of the largest entries of
+\(\omega(\x)\), which is cheaper than an initial selection
+\(S\in\mathcal{S}_s(\omega(\x))\) when \(l<s\). Moreover, entries with
+\(\omega(\x)_i \leq 2\lambda\) are irrelevant when
+\(\omega(\x)_{[l]} > 2\lambda\), so \(S\) can sometimes be shortened. A more
+refined implementation would first obtain a selection of \(l\) elements, read
+off \(\omega(\x)_{[l]}\), and stop if \(\omega(\x)_{[l]} \leq 2\lambda\);
+otherwise one continues until \(S\in \mathcal{S}_s(\omega(\x))\) is filled or
+a newly inserted entry is at most \(2\lambda\).
+
+When evaluating \(\omega(\x)\) in \eqref{omega}, the projection onto each
+\(D_i\) computed for \(d_{D_i}\) should be stored and reused in
+\(P_{\mathcal{B}(T)}\).
+\end{remark}
+
+\subsection{Circumventing an empty \(\prox\)}
+\label{sec:emptyfix}
+
+\Cref{alg:proxh} correctly returns \(\emptyset\) when \(l\ge 1\) and
+\(|I_{\mathcal{A}}(\x)|<l\). That answer is faithful to \eqref{h}, but a
+proximal-gradient loop cannot take a step. A direct fix is to cut from each \(D_i\) the open ball of radius
+\(\varepsilon_i>0\) about the origin, in the Euclidean or \(\ell_\infty\)
+norm,
+\[
+D_i^{\varepsilon}\coloneqq D_i\setminus\bigl\{\z\in\R^{n_i}:\|\z\|<\varepsilon_i\bigr\}.
+\]
+The origin remains available
+through \(B\), but an active group must leave that ball. If \(\varepsilon_i\)
+is small enough that \(D_i\) is not contained in the ball, then
+\(D_i^{\varepsilon}\) is closed and does not contain \(\mathbf{0}\), so every
+remaining group is activatable for every \(\x\). The modified regularizer
+\(h^{\varepsilon}\) then has a nonempty \(\prox_{h^{\varepsilon}}\) everywhere. The radius can come from the application, for
+instance a numerical floor such as \(10^{-8}\) times a typical group scale.
+
+If emptiness is only the coincidence
+\(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\) at a single point, a tiny perturbation of
+\(\x_{G_i}\) is enough as a numerical safeguard.
+
+\section{Concluding remarks}
+\label{sec:end}
+
+We have extended the proximal calculus of \cite{beck2018} from an upper
+cardinality bound to a genuine window \(l\le\|g(\x)\|_0\le s\). The lower
+bound changes the geometry of \(\prox_h\). It can be empty, and when
+\(\omega(\x)_{[l]}\le 2\lambda\) one must activate zero-gain (or even
+negative-gain) groups in order to meet the quota \(l\). Both phenomena are
+invisible when \(l=0\).
+
+The resulting oracle can be used in proximal-gradient schemes for
+\eqref{P}. If \(|I_{\mathcal{A}}(\x)|<l\), the hole in \(D_i\) of
+\cref{sec:emptyfix} restores a nonempty \(\prox\) to which the theorem applies.
+We do not recast the stationarity hierarchy of
+\cite{beck2018} for the window \(C_{l,s}\). Once \(\prox_h\) is available those
+conditions transfer formally, except that proximal stationarity is undefined
+at centres with fewer than \(l\) activatable groups. Natural next steps are a
+numerical study of the role of \(l\) on applications such as
+\cref{ex:carteira,ex:imbuia}, and the use of this \(\prox\)
+inside forward--backward methods.
+
+\bibliographystyle{plainnat}
+\bibliography{paper_extra}
+
+\end{document}
