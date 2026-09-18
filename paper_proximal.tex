@@ -59,15 +59,15 @@
 We study composite minimization of a smooth objective plus a group-\(\ell_0\)
 regularizer, subject to both an upper and a \emph{lower} bound on the number of
 active groups. The lower bound models diversification or coverage constraints
-that the classical cardinality-constrained formulation (\(l=0\)) cannot
-express. The main result is a complete characterization of the proximal mapping
-of the resulting discontinuous regularizer, extending
-\cite[Theorem~3.2]{beck2018}. In particular, we identify the set of
-activatable groups, prove that \(\prox_h\) is empty precisely when fewer than \(l\) groups can
-be activated, and give an explicit description of every proximal point together
-with an algorithm that computes one. The argument follows the comparison
-strategy of \cite{beck2018} for \(\omega_{[l]}>2\lambda\), and treats the new case \(\omega_{[l]}\le 2\lambda\) by a separate sandwich of
-supports and an explicit reconstruction of the witnessing index sets.
+that the classical cardinality-constrained formulation cannot express. The main
+result is a complete characterization of the proximal mapping of the resulting
+discontinuous regularizer, extending Theorem~3.2 of
+\citeauthor{beck2018} (\citeyear{beck2018}). In particular, we identify which
+groups can be activated, prove that the proximal mapping is empty precisely
+when fewer groups can be switched on than the lower bound requires, and give an
+explicit description of every proximal point together with an algorithm that
+computes one. The proof extends their comparison of groupwise gains to the
+case in which the lower bound is active.
 \end{abstract}
 
 \noindent\textbf{Keywords:}
@@ -102,28 +102,14 @@ of the resulting regularizer and that can be used as a black box inside
 forward--backward methods \cite{moreau1962,beckbook}.
 
 \paragraph{Contributions.}
-We characterize \(\prox_h\) for
-\[
-h(\x)=\lambda\|g(\x)\|_0+\delta_{B\cap C_{l,s}}(\x),
-\]
-where \(C_{l,s}\) is the set of vectors with between \(l\) and \(s\) active
-groups and \(B\) is a product of closed group-wise constraints (each group may
-be set to the origin). The new analytical points are:
-\begin{itemize}[leftmargin=1.4em,itemsep=0.25em]
-\item the \emph{activatable} index set \(I_{\mathcal{A}}(\x)\), on which all
-order statistics of the Beck--Hallak gains \(\omega(\x)\) are computed;
-\item emptiness of \(\prox_h\) if and only if \(l\ge 1\) and
-\(|I_{\mathcal{A}}(\x)|<l\);
-\item a two-case description of the active support of a proximal solution, according to the position
-of the \(l\)-th order statistic \(\omega(\x)_{[l]}\) relative to the threshold
-\(2\lambda\);
-\item a closed-form family \(\mathcal{T}(\x)\) of admissible supports and an
-algorithm that returns one proximal point (or reports emptiness).
-\end{itemize}
-When \(\omega(\x)_{[l]}>2\lambda\) the argument is conceptually the same as
-\cite[Theorem~3.2]{beck2018}. When \(\omega(\x)_{[l]}\le 2\lambda\) one must
-force additional zero or negative gain groups in order to meet the lower bound \(l\); that
-case has no counterpart for \(l=0\).
+The main result is a characterization of the proximal mapping of this
+regularizer, extending \cite[Theorem~3.2]{beck2018} from an upper bound alone
+to a window on the number of active groups. With a lower bound the mapping can
+be empty, which never happens when only an upper bound is present. That
+emptiness is not an obstacle if the group constraints are modelled
+appropriately, as discussed in \cref{sec:emptyfix}. When the mapping is
+nonempty we describe every proximal point and give an algorithm that computes
+one.
 
 \section{Problem formulation}
 \label{sec:problem}
@@ -208,9 +194,9 @@ Here \(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns,
 off risk against return, and
 $$\Delta_n=\left\{\x \in \R^n\mid \x \geq \mathbf{0},\ \sum_{i=1}^n \x_i=1\right\}$$
 is the unit simplex. Decision variables are already grouped by sector. An
-upper bound \(s\) limits concentration; a positive lower bound \(l\)
+upper bound \(s\) caps how many sectors may be used; a positive lower bound \(l\)
 enforces a minimal diversification
-across sectors, in the same spirit as sparse Markowitz models
+across them, in the same spirit as sparse Markowitz models
 \cite{brodie2009}.
 \end{example}
 
@@ -278,6 +264,12 @@ If \(\mathbf{0}\) is an accumulation point of \(D_i\) and the unique nearest
 point is the origin---for example \(D_1=[0,1]\) and \(\x=\mathbf{0}\)---then
 \(i\notin I_{\mathcal{A}}(\x)\): the minimum over \(D_i\setminus\{\mathbf{0}\}\)
 is not attained, so that group cannot contribute a block of a proximal point.
+This same scenario is an example of poor model for a lower bound. If \(D_i\) contains both
+the origin and a neighbourhood of it, a method can activate a group with
+an arbitrarily small block, counting it towards the quota \(l\) without any
+meaningful diversification. A constraint that is meant to be either off or
+genuinely on should exclude a neighbourhood of the origin. We return to this
+in \cref{sec:emptyfix}.
 
 \begin{lemma}\label{lem:ativavel}
 Let \(\x\in\R^n\) and \(i\in\{1,2,\ldots,m\}\). If \(\omega(\x)_i\neq 0\), then
@@ -375,6 +367,8 @@ obeys \(l\leq |S|\leq s'\), hence, by construction,
 A support leaving \(I_{\mathcal{A}}(\x)\) does not attain the minimum.
 Therefore \(\U\in\prox_h(\x)\).
 \end{proof}
+This emptiness is not an obstacle if the constraints are modelled
+appropriately; see \cref{sec:emptyfix}.
 
 \section{Characterization of the proximal mapping}
 \label{sec:prox}
@@ -817,28 +811,45 @@ When evaluating \(\omega(\x)\) in \eqref{omega}, the projection onto each
 \(P_{\mathcal{B}(T)}\).
 \end{remark}
 
-\subsection{Circumventing an empty \(\prox\)}
+\section{Appropriate modelling and empty proximal mappings}
 \label{sec:emptyfix}
 
-\Cref{alg:proxh} correctly returns \(\emptyset\) when \(l\ge 1\) and
-\(|I_{\mathcal{A}}(\x)|<l\). That answer is faithful to \eqref{h}, but a
-proximal-gradient loop cannot take a step. A direct fix is to cut from each \(D_i\) the open ball of radius
-\(\varepsilon_i>0\) about the origin, in the Euclidean or \(\ell_\infty\)
-norm,
+\Cref{alg:proxh} returns \(\emptyset\) when \(l\ge 1\) and
+\(|I_{\mathcal{A}}(\x)|<l\). That answer is faithful to \eqref{h}: there is no
+feasible point of \(B\cap C_{l,s}\) assembled from groupwise projections. A
+proximal-gradient loop, however, cannot take a step from an empty mapping.
+
+The emptiness is a modelling symptom, not a defect of the oracle. It appears
+when \(D_i\) contains the origin as an accumulation point, so that a group may
+be recorded as active with an arbitrarily small block. The same geometry lets
+a method meet the quota \(l\) by allocating a negligible amount on extra groups,
+which is not the diversification the lower bound was meant to enforce. If a
+group is to count as active, its block should be large enough to matter in the
+application.
+
+A direct way to encode that requirement is to cut from each \(D_i\) the open
+ball of radius \(\varepsilon_i>0\) about the origin, in the Euclidean or
+\(\ell_\infty\) norm,
 \[
 D_i^{\varepsilon}\coloneqq D_i\setminus\bigl\{\z\in\R^{n_i}:\|\z\|<\varepsilon_i\bigr\}.
 \]
-The origin remains available
-through \(B\), but an active group must leave that ball. If \(\varepsilon_i\)
-is small enough that \(D_i\) is not contained in the ball, then
-\(D_i^{\varepsilon}\) is closed and does not contain \(\mathbf{0}\), so every
-remaining group is activatable for every \(\x\). The modified regularizer
-\(h^{\varepsilon}\) then has a nonempty \(\prox_{h^{\varepsilon}}\) everywhere. The radius can come from the application, for
-instance a numerical floor such as \(10^{-8}\) times a typical group scale.
+The origin remains available through \(B\), so a group can still be switched
+off. An active group must leave the ball. Therefore, the radius should be a meaningful
+scale of the model rather than a machine epsilon. In the sector portfolio of
+\cref{ex:carteira}, a sector that is used at all might be required to receive,
+say, five percent of the budget, thus guaranteeing an allocation that represents genuine diversification. 
 
-If emptiness is only the coincidence
-\(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\) at a single point, a tiny perturbation of
-\(\x_{G_i}\) is enough as a numerical safeguard.
+If \(\forall i\ \varepsilon_i\) is small enough that \(D_i\) is not swallowed by the
+ball, then \(D_i^{\varepsilon}\) is closed and does not contain the origin, so
+every group is activatable for every \(\x\). The modified
+regularizer then has a nonempty proximal mapping everywhere. In that situation the emptiness test in
+\Cref{alg:proxh} is redundant and one may skip it and continue from the
+computation of \(s'\) onward.
+
+If one keeps \(D_i\) up to the origin, emptiness can still occur as the
+coincidence \(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\) at a single point. A small
+perturbation of \(\x_{G_i}\) is then a numerical safeguard, but it does not
+replace the modelling choice above.
 
 \section{Concluding remarks}
 \label{sec:end}
@@ -851,8 +862,10 @@ negative-gain) groups in order to meet the quota \(l\). Both phenomena are
 invisible when \(l=0\).
 
 The resulting oracle can be used in proximal-gradient schemes for
-\eqref{P}. If \(|I_{\mathcal{A}}(\x)|<l\), the hole in \(D_i\) of
-\cref{sec:emptyfix} restores a nonempty \(\prox\) to which the theorem applies.
+\eqref{P}. Under the modelling of \cref{sec:emptyfix}, a hole about the origin
+in each \(D_i\) makes every surviving group activatable, so the emptiness of
+\(\prox_h\) need not arise.
+
 We do not recast the stationarity hierarchy of
 \cite{beck2018} for the window \(C_{l,s}\). Once \(\prox_h\) is available those
 conditions transfer formally, except that proximal stationarity is undefined
