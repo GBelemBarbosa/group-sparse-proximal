@@ -129,7 +129,7 @@ $$
 g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \mathbf{0}, \\
 0, & \text{otherwise }\end{cases}.
 $$
-Thus \(g(\x)_i=1\) means that group \(G_i\) is \emph{active} for \(\x\);
+Thus \(g(\x)_i=1\) means that group \(G_i\) is \emph{active} for \(\x\),
 otherwise it is \emph{inactive}. For \(l,s\in \N_0\) with \(l\leq s\leq m\),
 $$
 C_{l,s}\coloneqq\left\{\x \in \R^n:l\leq\|g(\x)\|_0 \leq s\right\}
@@ -186,15 +186,21 @@ the number of sectors that may receive capital,
 \begin{equation}
 \begin{aligned}
 &\min&& \gamma \cdot \x^T \mathbf{C} \x-\boldsymbol{\mu}^T \x \\
-&\operatorname{s.t.}&& \x \in C_{l,s} \cap \Delta_n
-\end{aligned}.
+&\operatorname{s.t.}&& \x \in C_{l,s} \cap B,
+\end{aligned}
 \end{equation}
+where each \(D_i\) is the probability simplex on sector \(i\),
+\[
+\Delta_{n_i}
+=\bigl\{\z\in\R^{n_i}:\z\ge\mathbf{0},\ \mathbf{1}^\top\z=1\bigr\},
+\]
+so that
+\(B=\prod_{i=1}^m(\Delta_{n_i}\cup\{\mathbf{0}\})\).
 Here \(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns,
-\(\mathbf{C} \in \R^{n \times n}\) is a covariance matrix, \(\gamma>0\) trades
-off risk against return, and
-$$\Delta_n=\left\{\x \in \R^n\mid \x \geq \mathbf{0},\ \sum_{i=1}^n \x_i=1\right\}$$
-is the unit simplex. Decision variables are already grouped by sector. An
-upper bound \(s\) caps how many sectors may be used; a positive lower bound \(l\)
+\(\mathbf{C} \in \R^{n \times n}\) is a covariance matrix, and \(\gamma>0\) trades
+off risk against return. An active sector has nonnegative weights that sum
+to one on its own assets and an inactive sector is the origin. An
+upper bound \(s\) caps how many sectors may be used and a positive lower bound \(l\)
 enforces a minimal diversification
 across them, in the same spirit as sparse Markowitz models
 \cite{brodie2009}.
@@ -285,7 +291,7 @@ contain the origin.
 \end{proof}
 A point of \(D_i\) strictly closer than the origin would yield
 \(\omega(\x)_i>0\). Consequently, if \(\omega(\x)_i=0\), the origin already
-realizes the distance to \(D_i\cup\{\mathbf{0}\}\); one has
+realizes the distance to \(D_i\cup\{\mathbf{0}\}\). One has
 \(i\in I_{\mathcal{A}}(\x)\) only when \(P_{D_i}(\x_{G_i})\) contains another
 point \emph{at the same} distance.
 
@@ -533,7 +539,7 @@ sums gives \(I_{2\lambda}^>(\x)\subset I_1(\y)\subset I_{2\lambda}^\geq(\x)\). A
 holds for \(\y\).
 
 In all subcases, \(|I_1(\y)|\geq l\): if \(\omega(\x)_{[s']}>2\lambda\) one has
-\(|I_1(\y)|=s'\geq l\); in the others, \(I_{2\lambda}^>(\x)\subset I_1(\y)\) and
+\(|I_1(\y)|=s'\geq l\) and, in the others, \(I_{2\lambda}^>(\x)\subset I_1(\y)\) and
 \(|I_{2\lambda}^>(\x)|\geq l\) because \(\omega(\x)_{[l]}>2\lambda\) (or
 \(l=0\)).
 Finally, as already observed, \(\y_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\)
@@ -802,8 +808,7 @@ If \(\omega(\x)_{[l]} \leq 2\lambda\), it is enough to compute a selection
 \(\omega(\x)_i \leq 2\lambda\) are irrelevant when
 \(\omega(\x)_{[l]} > 2\lambda\), so \(S\) can sometimes be shortened. A more
 refined implementation would first obtain a selection of \(l\) elements, read
-off \(\omega(\x)_{[l]}\), and stop if \(\omega(\x)_{[l]} \leq 2\lambda\);
-otherwise one continues until \(S\in \mathcal{S}_s(\omega(\x))\) is filled or
+off \(\omega(\x)_{[l]}\), and stop if \(\omega(\x)_{[l]} \leq 2\lambda\). Otherwise one continues until \(S\in \mathcal{S}_s(\omega(\x))\) is filled or
 a newly inserted entry is at most \(2\lambda\).
 
 When evaluating \(\omega(\x)\) in \eqref{omega}, the projection onto each
@@ -833,23 +838,32 @@ ball of radius \(\varepsilon_i>0\) about the origin, in the Euclidean or
 \[
 D_i^{\varepsilon}\coloneqq D_i\setminus\bigl\{\z\in\R^{n_i}:\|\z\|<\varepsilon_i\bigr\}.
 \]
-The origin remains available through \(B\), so a group can still be switched
-off. An active group must leave the ball. Therefore, the radius should be a meaningful
-scale of the model rather than a machine epsilon. In the sector portfolio of
-\cref{ex:carteira}, a sector that is used at all might be required to receive,
-say, five percent of the budget, thus guaranteeing an allocation that represents genuine diversification. 
-
 If \(\forall i\ \varepsilon_i\) is small enough that \(D_i\) is not swallowed by the
 ball, then \(D_i^{\varepsilon}\) is closed and does not contain the origin, so
 every group is activatable for every \(\x\). The modified
-regularizer then has a nonempty proximal mapping everywhere. In that situation the emptiness test in
-\Cref{alg:proxh} is redundant and one may skip it and continue from the
-computation of \(s'\) onward.
+regularizer then has a nonempty proximal mapping everywhere, therefore the emptiness test and the
+computation of \(s'\) in
+\Cref{alg:proxh} are redundant (\(s'=s\)) and one may continue from the
+selection of \(S\in\mathcal{S}_s(\omega(\x))\). The origin remains available through \(B\), so a group can still be switched
+off, and an active group must leave the ball. Thus, the chosen radius should be a meaningful
+scale of the model rather than a machine epsilon.
 
-If one keeps \(D_i\) up to the origin, emptiness can still occur as the
-coincidence \(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\) at a single point. A small
-perturbation of \(\x_{G_i}\) is then a numerical safeguard, but it does not
-replace the modelling choice above.
+The portfolio of \cref{ex:carteira} is already on the safe side of that
+geometry as \(D_i=\Delta_{n_i}\) does not contain the origin, so every sector is
+activatable and \(\prox_h\) is nonempty. A different modelling issue remains.
+A point of \(\Delta_{n_i}\) may still put an arbitrarily small weight on
+some assets. In the same spirit as the hole about the origin, one may cut
+each coordinate out of the open interval \((0,t)\), for instance \(t=0.05\):
+\[
+D_i^{t}
+=\Delta_{n_i}\setminus\bigcup_{k=1}^{n_i}\bigl\{\z\in\R^{n_i}:\z_k\in(0,t)\bigr\}
+=\bigl\{\z\in\Delta_{n_i}:\z_k\notin(0,t)\text{ for all }k\bigr\}.
+\]
+Note that \(D_i^{t}\) is still closed. The origin remains available by switching the
+whole group off through \(B\).
+
+If one keeps the origin in \(D_i\) for modelling reasons and emptiness (\(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\)) occurs as a coincidence at a single point, then a small
+perturbation of \(\x_{G_i}\) is viable a numerical safeguard. This may happen, for instance, if \(D_i=\R^{n_i}\) and \(\x_{G_i}=\mathbf{0}\).
 
 \section{Concluding remarks}
 \label{sec:end}
