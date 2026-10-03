@@ -184,6 +184,7 @@ extends that characterization to \(l\leq s\).
 Following \cite{beck2018}, consider mean--variance allocation with a bound on
 the number of sectors that may receive capital,
 \begin{equation}
+\label{eq:mv}
 \begin{aligned}
 &\min&& \gamma \cdot \x^T \mathbf{C} \x-\boldsymbol{\mu}^T \x \\
 &\operatorname{s.t.}&& \x \in C_{l,s} \cap B,
@@ -865,6 +866,167 @@ whole group off through \(B\).
 If one keeps the origin in \(D_i\) for modelling reasons and emptiness (\(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\)) occurs as a coincidence at a single point, then a small
 perturbation of \(\x_{G_i}\) is viable a numerical safeguard. This may happen, for instance, if \(D_i=\R^{n_i}\) and \(\x_{G_i}=\mathbf{0}\).
 
+\section{A sector portfolio computation}
+\label{sec:numerics}
+
+This section applies \cref{alg:proxh} to the sector portfolio of
+\cref{ex:carteira} and, on the same returns, to a long-only Markowitz model
+with a cap on the number of names. Prices are daily adjusted closes from
+Yahoo Finance for the S\&P~500 constituents with a complete series on the
+common window: 492 names in the 11 GICS sectors, as simple daily returns. The
+panel has 417 sessions, from 5~May 2023 through 31~December 2024. The last
+252 sessions, the calendar year 2024, are the test set. The preceding 165
+sessions are the training window. The mean \(\boldsymbol{\mu}\) and the
+covariance \(\mathbf{C}\) in \eqref{eq:mv} are the training sample mean and
+the training sample covariance, with a ridge
+\(10^{-4}\operatorname{tr}(\mathbf{C})/n\) times the identity so that
+\(\mathbf{C}\) is positive definite.
+
+In the sector model each \(D_i\) is the simplex of sector \(i\) or the coordinatewise cutted version \(D_i^t\) when \(t>0\) (\cref{sec:emptyfix}), and
+\(B=\prod_i(D_i\cup\{\mathbf{0}\})\). An active sector sums to one on its own
+names and an inactive sector is the origin. The upper bound is \(s=11\) for all cases. The
+runs use \(t\in\{0,0.05\}\) and, for \(\lambda>0\), \(l\in\{1,3,5\}\). The
+case \(\lambda=0\) is solved once for each \(t\) with \(l=0\), as it usually results in solutions that don't hit the lower bound anyway. The Markowitz
+model is the long-only simplex
+\(\{\x\ge\mathbf{0}:\mathbf{1}^\top\x=1\}\) with \(\|\x\|_0\le k\) for
+\(k\in\{1,5,10,20,40,80,492\}\). On that simplex an \(\ell_1\) penalty is
+constant, so the cap is the sparsity control \cite{brodie2009}.
+
+The coefficient \(\gamma\) in \eqref{eq:mv} is the positive number that
+equates the risk term and the return term on a reference portfolio feasible
+for that model. For the sector model the reference is the product of the
+equal-weight simplices, one unit of capital in every sector, which gives
+\(\gamma=1.35\). For the Markowitz model the reference is the equal-weight
+portfolio of all 492 names, which gives \(\gamma=16.97\). Note that the second is about
+eleven times the first, as rescaling the \(11\) simplices reference onto the unit
+simplex divides the mean by approximetly \(11\) and the variance by \(11^2\). The tables give 
+the held-out return, but the training value of \eqref{eq:mv} is not presented, since 
+the two references used do not put that value on the same scale.
+
+The sector penalty is a fraction of
+\(\sigma=\frac12\|P(\x_{\mathrm{eq}})-\x_{\mathrm{eq}}\|_2^2\approx 0.131\),
+where \(\x_{\mathrm{eq}}\) is the equal-weight vector of all names and \(P\)
+is the projection onto the product of the uncut simplices. The positive
+penalties are \(\lambda\in\{0.01,0.02,0.05,0.1\}\sigma\). For every \((t,l)\)
+the two largest \(\lambda\) returned the same portfolio, and those pairs are one row.
+
+Both models are solved by a nonmonotone GLL spectral proximal-gradient iteration
+in the spirit of \cite{kanzow2022}, starting from the equal-weight book. For the
+capped simplex the step is the Euclidean projection onto
+\(\{\x\ge\mathbf{0}:\mathbf{1}^\top\x=1,\ \|\x\|_0\le k\}\), starting from
+equal weights on the \(k\) names of largest training mean. The case \(k=1\)
+compares \eqref{eq:mv} at the \(n\) vertices, because a projected step that
+begins at one vertex does not reach another.
+
+On the 252 test sessions the portfolio produces the daily series
+\(r=\mathbf{R}_{\mathrm{test}}\x\). The annualized mean is \(252\) times the
+sample mean of \(r\), the annualized volatility is the sample standard
+deviation of \(r\) times \(\sqrt{252}\), and the Sharpe ratio is their
+quotient, with no risk-free rate. In the sector model, \(k\) active sectors
+have gross exposure \(k\), so the annualized mean and volatility scale with
+\(k\) while the Sharpe ratio does not. On a single test year the Sharpe
+standard error is about one \cite{lo2002}. The remaining columns are the
+number of active sectors, the number of names with positive weight, and the
+smallest positive weight, which in the sector model is a share of a sector
+that sums to one.
+
+\begin{table}[ht]
+\centering
+\setlength{\belowcaptionskip}{10pt}
+\caption{Sector model, \(t=0\), \(\gamma=1.35\). Each active sector sums to one.
+The rows \(\lambda/\sigma\in\{0.05,0.1\}\) coincide.}
+\label{tab:sector-t0}
+\small
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+\(\lambda/\sigma\) & \(l\) & sectors & names & min.\ weight & ann.\ mean & ann.\ vol. & Sharpe \\
+\midrule
+\(0\) & \(0\) & 11 & 22 & 0.031 & 7.02 & 2.37 & 2.97 \\
+\(0.01\) & 1 & 6 & 12 & 0.234 & 6.11 & 2.06 & 2.97 \\
+\(0.02\) & 1 & 4 & 9 & 0.041 & 3.10 & 1.44 & 2.15 \\
+\(0.05\)--\(0.1\) & 1 & 1 & 1 & 1 & 1.02 & 0.56 & 1.82 \\
+\(0.01\) & 3 & 6 & 12 & 0.235 & 6.11 & 2.06 & 2.97 \\
+\(0.02\) & 3 & 4 & 8 & 0.264 & 4.44 & 1.49 & 2.99 \\
+\(0.05\)--\(0.1\) & 3 & 3 & 5 & 0.175 & 3.62 & 1.42 & 2.54 \\
+\(0.01\) & 5 & 7 & 14 & 0.056 & 6.07 & 2.12 & 2.86 \\
+\(0.02\) & 5 & 5 & 9 & 0.229 & 5.20 & 1.94 & 2.68 \\
+\(0.05\)--\(0.1\) & 5 & 5 & 9 & 0.221 & 5.24 & 1.95 & 2.69 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\setlength{\belowcaptionskip}{10pt}
+\caption{Sector model with the coordinate floor \(t=0.05\), \(\gamma=1.35\).
+An active weight is \(0\) or at least \(0.05\) inside its sector.}
+\label{tab:sector-t05}
+\small
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+\(\lambda/\sigma\) & \(l\) & sectors & names & min.\ weight & ann.\ mean & ann.\ vol. & Sharpe \\
+\midrule
+\(0\) & \(0\) & 11 & 21 & 0.060 & 7.02 & 2.37 & 2.96 \\
+\(0.01\) & 1 & 6 & 12 & 0.235 & 6.13 & 2.06 & 2.97 \\
+\(0.02\) & 1 & 5 & 11 & 0.050 & 4.29 & 1.74 & 2.47 \\
+\(0.05\)--\(0.1\) & 1 & 1 & 1 & 1 & 1.02 & 0.56 & 1.82 \\
+\(0.01\) & 3 & 6 & 12 & 0.231 & 6.15 & 2.07 & 2.98 \\
+\(0.02\) & 3 & 4 & 9 & 0.050 & 3.10 & 1.44 & 2.15 \\
+\(0.05\)--\(0.1\) & 3 & 3 & 6 & 0.050 & 3.43 & 1.28 & 2.69 \\
+\(0.01\) & 5 & 6 & 12 & 0.235 & 6.12 & 2.06 & 2.97 \\
+\(0.02\) & 5 & 5 & 11 & 0.050 & 5.21 & 1.94 & 2.69 \\
+\(0.05\)--\(0.1\) & 5 & 5 & 9 & 0.217 & 5.20 & 1.94 & 2.68 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\setlength{\belowcaptionskip}{10pt}
+\caption{Long-only Markowitz model, weights summing to one, \(\gamma=16.97\).
+Every cap \(k\ge 20\) returned a portfolio of 20 names.}
+\label{tab:markowitz}
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+ & sectors & names & min.\ weight & ann.\ mean & ann.\ vol. & Sharpe \\
+\midrule
+equal weight & 11 & 492 & 0.002 & 0.192 & 0.119 & 1.61 \\
+\(k=1\) & 1 & 1 & 1 & 0.359 & 0.234 & 1.53 \\
+\(k=5\) & 4 & 5 & 0.109 & 1.13 & 0.371 & 3.04 \\
+\(k=10\) & 6 & 10 & 0.050 & 0.889 & 0.321 & 2.77 \\
+\(k=20\) & 8 & 20 & 0.009 & 0.815 & 0.282 & 2.89 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The mean and volatility columns are set aside here, as they
+scale with the number of active sectors, so the Sharpe ratio is the 
+column is the best comparison. With \(\lambda=0\) the upper bound \(s=11\) does not remove sectors, so every
+sector stays on. Each active sector is a simplex, and the capital inside it
+concentrates on only a few names. The penalty \(0.01\sigma\) is large enough to
+switch some sectors off and still small enough that \(l\) stays slack. The
+test ratio stays with the unpenalized book, so the first sectors to leave were
+not what that ratio was resting on. Some of the sparser books at \(0.02\sigma\),
+still above the lower bound, have a lower ratio than the lightly penalized
+rows. At higher \(\lambda\), the solutions sit at \(l\), which avoids sparsity above a 
+desired amount. When the bound is one sector the book is a single name, and that 
+is where the sector tables have their lowest test ratio. 
+
+The coordinate floor \(t=0.05\) shows up in the minimum-weight column, where
+several rows sit on the cut, and it changes some supports relative to the
+uncut table. The test-ratio pattern is similar to the one already described for \(t=0\).
+
+On the simplex, the uncapped problem returns 20 names. Every cap at 20 or above is
+therefore inactive, and a tighter cap is a genuine restriction of that
+problem. The equal-weight row spreads the unit budget over the whole universe.
+The single-name row is the vertex of lowest training value of \eqref{eq:mv},
+the training choice among the \(n\) vertices.
+Both have test ratios below the sparse rows of the same table. The five-name
+cap has the largest Sharpe entry in the three tables and sits with the
+multi-sector rows. The gap between those rows and the equal-weight or
+single-name rows is of the same order as the uncertainty of one test year.
+
 \section{Concluding remarks}
 \label{sec:end}
 
@@ -875,18 +1037,15 @@ bound changes the geometry of \(\prox_h\). It can be empty, and when
 negative-gain) groups in order to meet the quota \(l\). Both phenomena are
 invisible when \(l=0\).
 
-The resulting oracle can be used in proximal-gradient schemes for
-\eqref{P}. Under the modelling of \cref{sec:emptyfix}, a hole about the origin
-in each \(D_i\) makes every surviving group activatable, so the emptiness of
-\(\prox_h\) need not arise.
+The resulting oracle is the proximal step of the spectral method in
+\cref{sec:numerics}. Under the modelling of \cref{sec:emptyfix}, a hole about
+the origin in each \(D_i\) makes every group activatable, so the
+emptiness of \(\prox_h\) need not arise.
 
 We do not recast the stationarity hierarchy of
 \cite{beck2018} for the window \(C_{l,s}\). Once \(\prox_h\) is available those
 conditions transfer formally, except that proximal stationarity is undefined
-at centres with fewer than \(l\) activatable groups. Natural next steps are a
-numerical study of the role of \(l\) on applications such as
-\cref{ex:carteira,ex:imbuia}, and the use of this \(\prox\)
-inside forward--backward methods.
+at centres with fewer than \(l\) activatable groups.
 
 \bibliographystyle{plainnat}
 \bibliography{paper_extra}
