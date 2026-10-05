@@ -19,6 +19,10 @@
 \usepackage[colorlinks,citecolor=blue!50!black,linkcolor=blue!50!black]{hyperref}
 \usepackage[nameinlink,noabbrev]{cleveref}
 
+% Todo notes
+\usepackage[dvipsnames]{xcolor}
+\usepackage[color=Goldenrod]{todonotes}
+
 \newcommand{\eqjust}[1]{\qquad\eqref{#1}}
 
 \theoremstyle{plain}
@@ -61,13 +65,11 @@ regularizer, subject to both an upper and a \emph{lower} bound on the number of
 active groups. The lower bound models diversification or coverage constraints
 that the classical cardinality-constrained formulation cannot express. The main
 result is a complete characterization of the proximal mapping of the resulting
-discontinuous regularizer, extending Theorem~3.2 of
-\citeauthor{beck2018} (\citeyear{beck2018}). In particular, we identify which
-groups can be activated, prove that the proximal mapping is empty precisely
-when fewer groups can be switched on than the lower bound requires, and give an
-explicit description of every proximal point together with an algorithm that
-computes one. The proof extends their comparison of groupwise gains to the
-case in which the lower bound is active.
+discontinuous regularizer, extending Theorem~3.2 of \citeauthor{beck2018}
+(\citeyear{beck2018}). In particular, we identify which groups can be activated,
+prove that the proximal mapping is empty precisely when their number is smaller
+than the required lower bound, and give an explicit description of every
+proximal point together with an algorithm to compute one.
 \end{abstract}
 
 \noindent\textbf{Keywords:}
@@ -78,38 +80,37 @@ constraints; composite optimization.
 \label{sec:intro}
 
 Group sparsity comprises optimization problems whose decision variable is
-partitioned into disjoint blocks (groups), and in which one wishes to limit or
-penalize the number of nonzero groups. The structure arises whenever
-explanatory variables are highly correlated and must be treated jointly, or
-when the model itself imposes a predetermined grouping
-\cite{yuan2006,simon2013,beck2018}. Standard applications include
-portfolio construction,
-imaging and signal processing, total-variation denoising, compressed sensing
-\cite{donoho2006}, and low-rank approximation; see \cite{beck2018} and the
-references therein.
+partitioned into disjoint blocks (groups) that are expected to be predominantly
+zero at desirable solutions. The structure arises whenever explanatory variables
+are highly correlated and must be treated jointly, or when the model itself
+imposes a predetermined grouping~\cite{yuan2006,simon2013,beck2018}. Standard
+applications include portfolio construction, imaging and signal processing,
+total-variation denoising, compressed sensing~\cite{donoho2006}, and low-rank
+approximation. See \cite{beck2018} and the references therein.
 
 The generic proximal mapping of \cite{beck2018} covers a penalty on the number
-of active groups together with an \emph{upper} bound \(s\) on that number. We enlarge the class slightly by introducing a \emph{lower}
-bound \(l\) as well. The extra constraint controls the maximal sparsity of a
-solution and is useful whenever a minimum level of diversification is
-required: one should not concentrate a portfolio on a handful of sectors
-\cite{brodie2009,beck2018}. Even when the floor is only a target rather
-than a hard modelling constraint, specifying \(l\) is more convenient than
-tuning \(\lambda\) until the recovered support meets a desired minimum size:
-the constraint enforces the cardinality directly, and the grid of candidate
-penalties can be cut accordingly. The aim of this paper is a closed form for the proximal calculus
-of the resulting regularizer and that can be used as a black box inside
-forward--backward methods \cite{moreau1962,beckbook}.
+of active groups together with an \emph{upper} bound \(s\) on that number. We
+enlarge the class slightly by introducing a \emph{lower} bound \(l\) as well.
+The extra constraint controls the minimal sparsity of a solution and is useful
+whenever a minimum level of diversification is required. This may be the case,
+for example, in portfolio optimization, to avoid concentration on a handful of
+sectors~\cite{brodie2009,beck2018}. Even when the floor is only a target rather
+than a hard modeling constraint, specifying \(l\) is more convenient than tuning
+\(\lambda\) until the recovered support meets a desired minimum size: the
+constraint enforces the cardinality directly, and the grid of candidate
+penalties can be cut accordingly. The aim of this paper is to present a closed
+form for the proximal operator of the resulting regularizer that may be used as
+a black box inside forward--backward methods~\cite{moreau1962,beckbook}.
 
 \paragraph{Contributions.}
-The main result is a characterization of the proximal mapping of this
-regularizer, extending \cite[Theorem~3.2]{beck2018} from an upper bound alone
-to a window on the number of active groups. With a lower bound the mapping can
-be empty, which never happens when only an upper bound is present. That
-emptiness is not an obstacle if the group constraints are modelled
-appropriately, as discussed in \cref{sec:emptyfix}. When the mapping is
-nonempty we describe every proximal point and give an algorithm that computes
-one.
+The main contribution is the complete characterization of the proximal mapping
+of the regularizer, extending \cite[Theorem~3.2]{beck2018} from an upper bound
+alone to a two-sided interval on the number of active groups. In the presence of
+a nonzero lower bound, the proximal mapping can be empty, which never happens
+when only upper bounds are present. The emptiness is not an obstacle if the
+group constraints are modeled appropriately, as discussed in
+\cref{sec:emptyfix}. When the mapping is nonempty, we describe every proximal
+point and give an algorithm to compute one.
 
 \section{Problem formulation}
 \label{sec:problem}
