@@ -16,8 +16,21 @@
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage[numbers,sort&compress]{natbib}
+\makeatletter
+\def\toclevel@algorithm{0}
+\makeatother
 \usepackage[colorlinks,citecolor=blue!50!black,linkcolor=blue!50!black]{hyperref}
 \usepackage[nameinlink,noabbrev]{cleveref}
+% amsmath measures a tagged equation twice; write the link anchor once.
+\makeatletter
+\let\Hy@saved@make@anchor\Hy@make@anchor
+\def\Hy@make@anchor{%
+  \ifmeasuring@
+  \else
+    \Hy@saved@make@anchor
+  \fi
+}
+\makeatother
 
 \newcommand{\eqjust}[1]{\qquad\eqref{#1}}
 
@@ -58,16 +71,20 @@
 \begin{abstract}
 We study composite minimization of a smooth objective plus a group-\(\ell_0\)
 regularizer, subject to both an upper and a \emph{lower} bound on the number of
-active groups. The lower bound models diversification or coverage constraints
+active groups. The lower bound models diversification and coverage constraints
 that the classical cardinality-constrained formulation cannot express. The main
 result is a complete characterization of the proximal mapping of the resulting
 discontinuous regularizer, extending Theorem~3.2 of
-\citeauthor{beck2018} (\citeyear{beck2018}). In particular, we identify which
-groups can be activated, prove that the proximal mapping is empty precisely
-when fewer groups can be switched on than the lower bound requires, and give an
-explicit description of every proximal point together with an algorithm that
-computes one. The proof extends their comparison of groupwise gains to the
-case in which the lower bound is active.
+\citeauthor{beck2018} (\citeyear{beck2018}). Each group constraint is required
+to exclude the origin, otherwise the proximal mapping may be empty even when
+every group set is closed. Under that restriction the mapping is
+nonempty, and we give an explicit description of every proximal point together
+with an algorithm that computes one. The proof extends their comparison of
+groupwise gains to the case in which the lower bound is active. A different
+penalty may be attached to each group. The mapping is then obtained by
+subtracting twice that penalty from the corresponding gain and comparing the
+resulting vector with zero, with the proof naturally following from the single 
+penalty case.
 \end{abstract}
 
 \noindent\textbf{Keywords:}
@@ -95,21 +112,31 @@ solution and is useful whenever a minimum level of diversification is
 required: one should not concentrate a portfolio on a handful of sectors
 \cite{brodie2009,beck2018}. Even when the floor is only a target rather
 than a hard modelling constraint, specifying \(l\) is more convenient than
-tuning \(\lambda\) until the recovered support meets a desired minimum size:
-the constraint enforces the cardinality directly, and the grid of candidate
-penalties can be cut accordingly. The aim of this paper is a closed form for the proximal calculus
-of the resulting regularizer and that can be used as a black box inside
+tuning \(\lambda\) until the recovered support meets a desired minimum size.
+The constraint enforces the cardinality directly, and the grid of candidate
+penalties can be cut accordingly. 
+
+The penalty itself need not be the same for
+every group. A vector \((\lambda_i)_{i=1}^m\) charges group \(i\) its own
+price, which a single \(\lambda\) cannot express, as one group may be more costly
+to activate than another. \Cref{sec:weights} carries the proximal mapping over
+to that vector, by reading the scalar characterization on the gains shifted by their corresponding
+\(\lambda_i\). The aim of this paper is a closed form for the proximal calculus
+of the resulting regularizer that can be used as a black box inside
 forward--backward methods \cite{moreau1962,beckbook}.
 
 \paragraph{Contributions.}
 The main result is a characterization of the proximal mapping of this
 regularizer, extending \cite[Theorem~3.2]{beck2018} from an upper bound alone
-to a window on the number of active groups. With a lower bound the mapping can
-be empty, which never happens when only an upper bound is present. That
-emptiness is not an obstacle if the group constraints are modelled
-appropriately, as discussed in \cref{sec:emptyfix}. When the mapping is
-nonempty we describe every proximal point and give an algorithm that computes
-one.
+to a window on the number of active groups. A lower bound makes the mapping
+sensitive to whether the origin belongs to the group sets. We require each
+\(D_i\) to exclude the origin; \cref{sec:emptyfix} shows that the mapping may
+otherwise be empty even for closed groups. Under that hypothesis we
+describe every proximal point and give an algorithm that computes one. The
+penalty may depend on the group. \Cref{sec:weights} applies the same
+characterization to the gains after subtracting twice the corresponding
+penalty. Equal penalties are the case in which this shift preserves the order
+of the gains.
 
 \section{Problem formulation}
 \label{sec:problem}
@@ -130,7 +157,7 @@ g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \mathbf{0}, \\
 0, & \text{otherwise }\end{cases}.
 $$
 Thus \(g(\x)_i=1\) means that group \(G_i\) is \emph{active} for \(\x\),
-otherwise it is \emph{inactive}. For \(l,s\in \N_0\) with \(l\leq s\leq m\),
+otherwise it is \emph{inactive}. For \(l,s\in \N_0\) with \(0\leq l\leq s\leq m\),
 $$
 C_{l,s}\coloneqq\left\{\x \in \R^n:l\leq\|g(\x)\|_0 \leq s\right\}
 $$
@@ -154,8 +181,10 @@ continuously differentiable and bounded from below, and
 \label{B}
 B \coloneqq \prod_{i=1}^m\left(D_i \cup\{\mathbf{0}\}\right)=\left(D_1 \cup\{\mathbf{0}\}\right) \times\left(D_2 \cup\{\mathbf{0}\}\right) \times \cdots \times\left(D_m \cup\{\mathbf{0}\}\right),
 \end{equation}
-with each \(D_i \subset \R^{n_i}\) nonempty and closed. This problem is equivalent, in
-composite unconstrained form,
+with each \(D_i \subset \R^{n_i}\) nonempty and closed, and with
+\(\mathbf{0}\notin D_i\). \Cref{sec:emptyfix} explains why the origin has to
+be excluded. This problem is equivalent, in
+composite unconstrained form, to
 \begin{equation}
 \label{P}
 \min _{\x \in \R^n} f(\x)+h(\x),
@@ -163,8 +192,11 @@ composite unconstrained form,
 with
 \begin{equation}
 \label{h}
-h(\x) \coloneqq\lambda\|g(\x)\|_0+\delta_{B \cap C_{l,s}}(\x).
+h(\x) \coloneqq\lambda\|g(\x)\|_0+\chi_{B \cap C_{l,s}}(\x).
 \end{equation}
+\Cref{sec:weights} replaces the common penalty \(\lambda\) by a penalty
+\(\lambda_i\) on group \(i\). The arguments through \Cref{sec:closed} treat the
+equal-penalty case \(\lambda_i=\lambda\).
 Problem~\eqref{P} has the familiar shape of proximal composite optimization.
 The proximal mapping of \(h\)
 \begin{equation}
@@ -174,7 +206,69 @@ The proximal mapping of \(h\)
 \end{aligned}
 \end{equation}
 was characterized in \cite{beck2018} for \(l=0\). \Cref{thm:proxh} below
-extends that characterization to \(l\leq s\).
+extends that characterization to \(0<l\leq s\).
+
+\section{Origin exclusion and modelling}
+\label{sec:emptyfix}
+
+The hypothesis \(\mathbf{0}\notin D_i\) is part of the model, not an optional
+regularization. If some \(D_i\) contains the origin, \(\prox_h\) may be empty
+even though every \(D_i\) is closed.
+
+\begin{example}[empty proximal mapping]
+\label{ex:counter}
+Let \(m=1\), with scalar group \(D_1=[0,+\infty)\), and take
+\(l=s=1\). At \(\z=(0)\), the point \((t)\) with \(t>0\) lies in \(B\cap C_{l,s}\) and
+the objective of \eqref{prox} equals
+\[
+\lambda+\frac12 t^2.
+\]
+The infimum of these values is \(\lambda\), approached as \(t\downarrow 0\), and
+it is not attained. The limit is the origin, which has no active group, so it
+lies outside \(C_{l,s}\). Hence the proximal mapping at the origin is empty.
+\end{example}
+
+What fails is that \(\mathbf{0}\in D_1\). The feasible block \((t)\) shrink
+toward the origin, which is the inactive state of the first group, and the
+infimum of the proximal objective is not attained. 
+
+If instead each \(D_i\) is closed and excludes the origin, the distance from
+\(\mathbf{0}\) to \(D_i\) is positive. The origin of group \(i\) is then
+feasible only by switching the group off, through the factor \(\{\mathbf{0}\}\)
+in \(B\). A nearest point of \(\x_{G_i}\) in \(D_i\) exists and is never
+\(\mathbf{0}\), so every group can be turned on properly. For each admissible support
+the nearest-point problem on the corresponding product of sets \(D_i\) attains
+its minimum, the resulting blocks are nonzero, and \(h\) depends on the point
+only through which groups are active. There are finitely many supports of
+size between \(l\) and \(s\), so the minimum in \eqref{prox} is attained and
+\(\prox_h(\x)\) is nonempty at every \(\x\).
+
+A direct way to enforce the exclusion is to cut from each \(D_i\) the open
+ball of radius \(\delta_i>0\) about the origin, in the Euclidean or
+\(\ell_\infty\) norm,
+\[
+D_i^{\delta}\coloneqq D_i\setminus\bigl\{\z\in\R^{n_i}:\|\z\|<\delta_i\bigr\}.
+\]
+If \(\delta_i\) is small enough that \(D_i\) is not swallowed by the
+ball, then \(D_i^{\delta}\) is closed and does not contain the origin.
+The origin remains available through \(B\), so a group can still be switched
+off, and an active group must leave the ball. The chosen radius should be a
+meaningful scale of the model rather than a machine epsilon (see 
+\autoref{sec:numerics} for further discussions).
+
+The portfolio of \cref{ex:carteira} is already on the safe side of that
+geometry as \(D_i=\Delta_{n_i}\) does not contain the origin, so every sector
+can be turned on and \(\prox_h\) is nonempty. A different modelling issue remains.
+A point of \(\Delta_{n_i}\) may still put an arbitrarily small weight on
+some assets. In the same spirit as the hole about the origin, one may cut
+each coordinate out of the open interval \((0,t)\), for instance \(t=0.05\):
+\[
+D_i^{t}
+=\Delta_{n_i}\setminus\bigcup_{k=1}^{n_i}\bigl\{\z\in\R^{n_i}:\z_k\in(0,t)\bigr\}
+=\bigl\{\z\in\Delta_{n_i}:\z_k\notin(0,t)\text{ for all }k\bigr\}.
+\]
+Note that \(D_i^{t}\) is still closed. The origin remains again available by switching the
+whole group off through \(B\).
 
 \section{Motivating examples}
 \label{sec:examples}
@@ -212,11 +306,11 @@ across them, in the same spirit as sparse Markowitz models
 An instance of \eqref{P} with singleton groups is
 \begin{equation}
 \label{regress2}
-\min_{\x\in\R^n}\frac{1}{2}\|\A\x-\bv\|^2+\lambda\|\x\|_0+\delta_{C_{l,s}}(\x),
+\min_{\x\in\R^n}\frac{1}{2}\|\A\x-\bv\|^2+\lambda\|\x\|_0+\chi_{C_{l,s}}(\x),
 \end{equation}
-with \(\A\in \R^{m\times n}\) and \(\bv\in \R^m\).
-The formulation was motivated by infrared spectroscopy on the IMBUIA
-beamline (SIRIUS/LNLS), where a sparse spectrogram is recovered from
+with \(\A\in \R^{m\times n}\) and \(\bv\in \R^m\), and \(\chi\) being the set 
+indicator function. The formulation was motivated by infrared spectroscopy on 
+the IMBUI Abeamline (SIRIUS/LNLS), where a sparse spectrogram is recovered from
 measurements.
 If a prior estimate of the number of spectral lines is available --- from
 previous experiments or from the literature --- it can be encoded as the
@@ -243,7 +337,7 @@ since \(\V\) may have ties. For instance, if \(\V = (0\ 0\ 1)^T\), then
 Given \(\x \in \R^n\), the orthogonal projection onto a set \(C\subset\R^n\)
 is
 $$
-P_C(\x)\coloneqq \prox_{\delta_C}(\x)=\argmin_{\y\in C}\|\y-\x\|_2,
+P_C(\x)\coloneqq \prox_{\chi_C}(\x)=\argmin_{\y\in C}\|\y-\x\|_2,
 $$
 and the distance to \(D_i\) is
 $$
@@ -259,52 +353,12 @@ governs which groups are activated by \(\prox_h\).
 
 The support of a vector (its set of active-group indices) is
 $$I_1(\x)\coloneqq\left\{i \in\{1,2, \ldots, m\}\mid g(\x)_i=1\right\}.$$
-The origin is always feasible for every group, through
-\(B=\prod_i(D_i\cup\{\mathbf{0}\})\). Activating group \(i\), however,
-requires a point of \(D_i\setminus\{\mathbf{0}\}\). This motivates the set of
-\emph{activatable} groups
-\begin{equation}
-\label{Iativ}
-I_{\mathcal{A}}(\x)\coloneqq\bigl\{i\in\{1,2,\ldots,m\}\mid P_{D_i}(\x_{G_i})\setminus\{\mathbf{0}\}\neq\emptyset\bigr\}.
-\end{equation}
-If \(\mathbf{0}\) is an accumulation point of \(D_i\) and the unique nearest
-point is the origin---for example \(D_1=[0,1]\) and \(\x=\mathbf{0}\)---then
-\(i\notin I_{\mathcal{A}}(\x)\): the minimum over \(D_i\setminus\{\mathbf{0}\}\)
-is not attained, so that group cannot contribute a block of a proximal point.
-This same scenario is an example of poor model for a lower bound. If \(D_i\) contains both
-the origin and a neighbourhood of it, a method can activate a group with
-an arbitrarily small block, counting it towards the quota \(l\) without any
-meaningful diversification. A constraint that is meant to be either off or
-genuinely on should exclude a neighbourhood of the origin. We return to this
-in \cref{sec:emptyfix}.
-
-\begin{lemma}\label{lem:ativavel}
-Let \(\x\in\R^n\) and \(i\in\{1,2,\ldots,m\}\). If \(\omega(\x)_i\neq 0\), then
-\(i\in I_{\mathcal{A}}(\x)\).
-\end{lemma}
-\begin{proof}
-Since \(D_i\) is closed, \(P_{D_i}(\x_{G_i})\) is nonempty and \(\omega(\x)_i\) well defined. If \(\omega(\x)_i>0\), then \(d_{D_i}(\x_{G_i})<\|\x_{G_i}\|_2\), hence
-\(\mathbf{0}\notin P_{D_i}(\x_{G_i})\), therefore
-\(P_{D_i}(\x_{G_i})\setminus\{\mathbf{0}\}\neq\emptyset\). If
-\(\omega(\x)_i<0\), then \(d_{D_i}(\x_{G_i})>\|\x_{G_i}\|_2\), which forces
-\(\mathbf{0}\notin D_i\). Thus \(P_{D_i}(\x_{G_i})\subset D_i\) does not
-contain the origin.
-\end{proof}
-A point of \(D_i\) strictly closer than the origin would yield
-\(\omega(\x)_i>0\). Consequently, if \(\omega(\x)_i=0\), the origin already
-realizes the distance to \(D_i\cup\{\mathbf{0}\}\). One has
-\(i\in I_{\mathcal{A}}(\x)\) only when \(P_{D_i}(\x_{G_i})\) contains another
-point \emph{at the same} distance.
-
-When applied to \(\omega(\x)\), the order statistics and the sets
-are taken over \(I_{\mathcal{A}}(\x)\): \(\omega(\x)_{[k]}\) is
-the \(k\)-th largest value in
-\(\{\omega(\x)_i\mid i\in I_{\mathcal{A}}(\x)\}\), and
-\(\mathcal{S}_k(\omega(\x))\) is \eqref{defS} for that subvector. Likewise,
-$$I_{a}^{\stackrel{?}{=}}(\x)\coloneqq\left\{i\in I_{\mathcal{A}}(\x)\mid \omega(\x)_i\stackrel{?}{=}a\right\},$$
+Since \(\mathbf{0}\notin D_i\), a nearest point of a block in \(D_i\) is never
+the origin, so every group can be activated.
+Level sets of the gain are written
+$$I_{a}^{\stackrel{?}{=}}(\x)\coloneqq\left\{i\in\{1,2,\ldots,m\}\mid \omega(\x)_i\stackrel{?}{=}a\right\},$$
 where \(\stackrel{?}{=}\) stands for an arbitrary relation, and \(a\in\R\) may
-also be written as \([i]\) to mean \(\omega(\x)_{[i]}\). We write
-\(s'\coloneqq\min\{s,|I_{\mathcal{A}}(\x)|\}\).
+also be written as \([i]\) to mean \(\omega(\x)_{[i]}\).
 
 For an index set \(T\subset\{1,2,\ldots,n\}\), the matrix \(\mathbf{U}_T\)
 consists of the columns of \(\mathbf{I}_n\) indexed by \(T\), and we write
@@ -336,47 +390,6 @@ $$
 $$
 \end{lemma}
 
-\section{When the proximal mapping is empty}
-\label{sec:empty}
-
-\begin{proposition}\label{prop:empty}
-One has \(\prox_h(\x)=\emptyset\) if and only if \(l\geq 1\) and
-\(|I_{\mathcal{A}}(\x)|<l\).
-\end{proposition}
-\begin{proof}
-If \(\U\in\prox_h(\x)\), then for
-\(i\in I_1(\U)\) one has \(\U_{G_i}\neq\mathbf{0}\) and \(\U_{G_i}\in P_{D_i}(\x_{G_i})\), otherwise a better solution of the problem defining \(\prox_h(\x)\) could be
-obtained with a smaller quadratic term and the same active groups. A group with
-\(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\) cannot be activated, thus \(I_1(\U)\subset I_{\mathcal{A}}(\x)\). Since \(|I_1(\U)|\geq l\), it follows that
-\(|I_{\mathcal{A}}(\x)|\geq l\).
-
-Conversely, if \(|I_{\mathcal{A}}(\x)|\geq l\) or \(l=0\),
-take \(T\subset I_{\mathcal{A}}(\x)\) maximizing
-\(\sum_{i\in T}\bigl(\omega(\x)_i-2\lambda\bigr)\) subject to
-\(l\leq |T|\leq s'\) (so \(T=\emptyset\) is admissible when \(l=0\)), and set
-\(\U_{G_i}\in P_{D_i}(\x_{G_i})\setminus\{\mathbf{0}\}\) for \(i\in T\) and
-\(\U_{G_i}=\mathbf{0}\) otherwise. Then \(\U\in B\cap C_{l,s}\) and, by
-\Cref{lem:toomega},
-\[
-\|\U-\x\|_2^2+2\lambda\|g(\U)\|_0=\|\x\|_2^2-\sum_{i\in T}\bigl(\omega(\x)_i-2\lambda\bigr).
-\]
-Any \(\y\in B\cap C_{l,s}\) with \(S=I_1(\y)\subset I_{\mathcal{A}}(\x)\)
-satisfies
-\[
-\|\y-\x\|_2^2+2\lambda\|g(\y)\|_0\geq\|\x\|_2^2-\sum_{i\in S}\bigl(\omega(\x)_i-2\lambda\bigr),
-\]
-because \(\y_{G_i}\in D_i\setminus\{\mathbf{0}\}\) for \(i\in S\), and
-equality in \Cref{lem:toomega} requires the projections. The set \(S\) also
-obeys \(l\leq |S|\leq s'\), hence, by construction,
-\[
-\sum_{i\in T}\bigl(\omega(\x)_i-2\lambda\bigr)\geq\sum_{i\in S}\bigl(\omega(\x)_i-2\lambda\bigr).
-\]
-A support leaving \(I_{\mathcal{A}}(\x)\) does not attain the minimum.
-Therefore \(\U\in\prox_h(\x)\).
-\end{proof}
-This emptiness is not an obstacle if the constraints are modelled
-appropriately; see \cref{sec:emptyfix}.
-
 \section{Characterization of the proximal mapping}
 \label{sec:prox}
 
@@ -386,13 +399,11 @@ and the first half of the proof, corresponding to \(\omega(\x)_{[l]}> 2\lambda\)
 is conceptually identical to the \(l=0\) case, up to a few details.
 
 \begin{theorem}\label{thm:proxh}
-Let \(\x \in \R^n\).
-If \(|I_{\mathcal{A}}(\x)|<l\), then \(\prox_h(\x)=\emptyset\). If
-\(|I_{\mathcal{A}}(\x)|\geq l\), then \(\U \in \prox_h(\x)\) if and only if
-the following conditions hold:
+Let \(\x \in \R^n\). Then \(\prox_h(\x)\) is nonempty, and \(\U \in \prox_h(\x)\)
+if and only if the following conditions hold:
 \begin{enumerate}[label=(\alph*)]
     \item \(\U_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\ \forall i \in I_1(\U)\);
-    \item If \(\omega(\x)_{[l]}> 2\lambda\) or \(l=0\), \(\exists T \in \mathcal{S}_{s'}(\omega(\x))\) such that
+    \item If \(\omega(\x)_{[l]}> 2\lambda\) or \(l=0\), \(\exists T \in \mathcal{S}_{s}(\omega(\x))\) such that
 \begin{equation}
 \label{T1}
     T \cap I_{2\lambda}^>(\x) \subset I_1(\U) \subset T \cap I_{2\lambda}^\geq(\x),
@@ -401,7 +412,7 @@ and if \(\omega(\x)_{[l]}\leq 2\lambda\) and \(l\geq 1\), \(\exists T \in \mathc
 $$
 U\in
 \begin{cases}
-    \left\{W \subset I_{2 \lambda}^{=}(x) \backslash(T \cup\{i\})\mid |W| =\min \bigl\{\bigl|I_{2 \lambda}^=(\x)\setminus(T\cup\{i\})\bigr|, s'-l\bigr\}\right\},&\omega(\x)_{[l]}=2\lambda\\
+    \left\{W \subset I_{2 \lambda}^{=}(x) \backslash(T \cup\{i\})\mid |W| =\min \bigl\{\bigl|I_{2 \lambda}^=(\x)\setminus(T\cup\{i\})\bigr|, s-l\bigr\}\right\},&\omega(\x)_{[l]}=2\lambda\\
     \{\emptyset\},&\omega(\x)_{[l]}<2\lambda
 \end{cases}
 $$
@@ -413,8 +424,7 @@ T\cup \{i\}\subset I_1(\U)\subset T\cup\{i\}\cup U.
 \end{enumerate}
 \end{theorem}
 \begin{proof}
-The case \(|I_{\mathcal{A}}(\x)|<l\) is \Cref{prop:empty}. From now on,
-\(|I_{\mathcal{A}}(\x)|\geq l\).
+Nonemptiness is the argument of \cref{sec:emptyfix}.
 Suppose that \(\U\) satisfies (a) and (b), and let
 \(\y \in \prox_{h}(\x)\).
 We will show that \(\U \in \prox_h(\x)\) and that \(\y\)
@@ -446,14 +456,14 @@ which in turn is equivalent to
 
 We first treat the first case of (b). The case \(l=0\) is
 \cite[Theorem~3.2]{beck2018}. If \(l\geq 1\), \eqref{T1} indeed yields
-\(l\leq |I_1(\U)|\leq s'\), since \(|T \cap I_{2\lambda}^>(\x)|\geq l\)
-because \(\omega(\x)_{[l]}> 2\lambda\), and \(|T|=s'\) by \eqref{defS}.
+\(l\leq |I_1(\U)|\leq s\), since \(|T \cap I_{2\lambda}^>(\x)|\geq l\)
+because \(\omega(\x)_{[l]}> 2\lambda\), and \(|T|=s\) by \eqref{defS}.
 
 Any indices of \(I_1(\U)\) that lie in \(I_{2\lambda}^=(\x)\) do not change the sum, hence by \eqref{T1}
 $$
 \sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in T \cap I_{2\lambda}^\geq(\x)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in T \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right) .
 $$
-Since \(T\) contains indices of a set of the \(s'\) largest entries of
+Since \(T\) contains indices of a set of the \(s\) largest entries of
 \(\omega(\x)\) and \(\y\) has at most \(s\) active groups (because
 \(\y \in C_{l,s}\)), one obtains
 $$
@@ -497,10 +507,10 @@ $$
 \sum_{i \in I_1(\y)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\y) \cap I_{2\lambda}^>(\x)}\left(\omega(\x)_i-2 \lambda\right)=\sum_{i \in I_1(\U)}\left(\omega(\x)_i-2 \lambda\right) .
 $$
 
-It remains to exhibit \(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) such that
+It remains to exhibit \(\tilde{T}\in\mathcal{S}_{s}(\omega(\x))\) such that
 \eqref{T1} holds with \(\U\) replaced by \(\y\).
 One already has \(I_1(\y)\cap I_{2\lambda}^<(\x)=\emptyset\),
-\(l\leq |I_1(\y)|\leq s'\)
+\(l\leq |I_1(\y)|\leq s\)
 and by the above equation
 \[
 \sum_{i\in I_1(\y)\cap I_{2\lambda}^>(\x)}\bigl(\omega(\x)_i-2\lambda\bigr)=\sum_{i\in T\cap I_{2\lambda}^>(\x)}\bigl(\omega(\x)_i-2\lambda\bigr).
@@ -508,48 +518,48 @@ and by the above equation
 The terms in \(I_{2\lambda}^>(\x)\) are strictly positive and those in
 \(I_{2\lambda}^=(\x)\) vanish.
 
-If \(\omega(\x)_{[s']}>2\lambda\), then \(T\cap I_{2\lambda}^>(\x)=T\) has
-cardinality \(s'\) and realizes the maximal sum among subsets of \(s'\)
+If \(\omega(\x)_{[s]}>2\lambda\), then \(T\cap I_{2\lambda}^>(\x)=T\) has
+cardinality \(s\) and realizes the maximal sum among subsets of \(s\)
 indices. A proper subset of \(I_{2\lambda}^>(\x)\), or the swap of an index
 in \(I_{2\lambda}^>(\x)\) for one in \(I_{2\lambda}^=(\x)\), strictly
-decreases the sum. Hence \(I_1(\y)\cap I_{2\lambda}^>(\x)\in\mathcal{S}_{s'}(\omega(\x))\)
-and \(|I_1(\y)\cap I_{2\lambda}^>(\x)|=s'\), which forces
+decreases the sum. Hence \(I_1(\y)\cap I_{2\lambda}^>(\x)\in\mathcal{S}_{s}(\omega(\x))\)
+and \(|I_1(\y)\cap I_{2\lambda}^>(\x)|=s\), which forces
 \(I_1(\y)\subset I_{2\lambda}^>(\x)\). Take \(\tilde{T}\coloneqq I_1(\y)\). Then
-\(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) and
+\(\tilde{T}\in\mathcal{S}_{s}(\omega(\x))\) and
 \(\tilde{T}\cap I_{2\lambda}^>(\x)=I_1(\y)=\tilde{T}\cap I_{2\lambda}^\geq(\x)\).
 
-If \(\omega(\x)_{[s']}=2\lambda\), every set in \(\mathcal{S}_{s'}(\omega(\x))\)
+If \(\omega(\x)_{[s]}=2\lambda\), every set in \(\mathcal{S}_{s}(\omega(\x))\)
 contains \(I_{2\lambda}^>(\x)\), hence
 \(T\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\). Equality of the positive
 sums forces \(I_1(\y)\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\). Together with
 \(I_1(\y)\cap I_{2\lambda}^<(\x)=\emptyset\), this yields
 \(I_{2\lambda}^>(\x)\subset I_1(\y)\subset I_{2\lambda}^\geq(\x)\). Since
-\(|I_1(\y)|\leq s'\) and \(|I_{2\lambda}^\geq(\x)|\geq s'\), there exists
+\(|I_1(\y)|\leq s\) and \(|I_{2\lambda}^\geq(\x)|\geq s\), there exists
 \(W\subset I_{2\lambda}^=(\x)\) with \(I_1(\y)\setminus I_{2\lambda}^>(\x)\subset W\)
-and \(|W|=s'-|I_{2\lambda}^>(\x)|\). Take
+and \(|W|=s-|I_{2\lambda}^>(\x)|\). Take
 \(\tilde{T}\coloneqq I_{2\lambda}^>(\x)\cup W\). Then
-\(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) and
+\(\tilde{T}\in\mathcal{S}_{s}(\omega(\x))\) and
 \(\tilde{T}\cap I_{2\lambda}^>(\x)\subset I_1(\y)\subset \tilde{T}\cap I_{2\lambda}^\geq(\x)\).
 
-If \(\omega(\x)_{[s']}<2\lambda\), again
+If \(\omega(\x)_{[s]}<2\lambda\), again
 \(T\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\) and equality of the positive
 sums gives \(I_{2\lambda}^>(\x)\subset I_1(\y)\subset I_{2\lambda}^\geq(\x)\). Any
-\(\tilde{T}\in\mathcal{S}_{s'}(\omega(\x))\) satisfies
+\(\tilde{T}\in\mathcal{S}_{s}(\omega(\x))\) satisfies
 \(\tilde{T}\cap I_{2\lambda}^>(\x)=I_{2\lambda}^>(\x)\) and
 \(\tilde{T}\cap I_{2\lambda}^\geq(\x)=I_{2\lambda}^\geq(\x)\), so \eqref{T1}
 holds for \(\y\).
 
-In all subcases, \(|I_1(\y)|\geq l\): if \(\omega(\x)_{[s']}>2\lambda\) one has
-\(|I_1(\y)|=s'\geq l\) and, in the others, \(I_{2\lambda}^>(\x)\subset I_1(\y)\) and
+In all subcases, \(|I_1(\y)|\geq l\): if \(\omega(\x)_{[s]}>2\lambda\) one has
+\(|I_1(\y)|=s\geq l\) and, in the others, \(I_{2\lambda}^>(\x)\subset I_1(\y)\) and
 \(|I_{2\lambda}^>(\x)|\geq l\) because \(\omega(\x)_{[l]}>2\lambda\) (or
 \(l=0\)).
 Finally, as already observed, \(\y_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\)
 \(\forall i \in I_1(\y)\), so (a) also holds for \(\y\).
 
 We now treat the second case of (b), in which \(\omega(\x)_{[l]}\leq 2\lambda\).
-Indeed, \eqref{T2} gives \(l\leq |I_1(\U)|\leq s'\), since
-\(|T\cup \{i\}|=l\) by \eqref{defS}, and \(|T\cup\{i\}\cup U|\leq s'\) because
-\(|U|\leq s'-l\) by construction of \(U\).
+Indeed, \eqref{T2} gives \(l\leq |I_1(\U)|\leq s\), since
+\(|T\cup \{i\}|=l\) by \eqref{defS}, and \(|T\cup\{i\}\cup U|\leq s\) because
+\(|U|\leq s-l\) by construction of \(U\).
 
 If \(\omega(\x)_{[l]}=2\lambda\), one has \(I_{[l]}^>(\x)=I_{2\lambda}^>(\x)\)
 and \(|I_{2\lambda}^>(\x)|\leq l-1\). Since \(T\in\mathcal{S}_{l-1}(\omega(\x))\),
@@ -566,7 +576,7 @@ again and is satisfied as equality. Thus \(\U\in\prox_h(\x)\),
 \(I_1(\y)\cap I_{2\lambda}^<(\x)=\emptyset\), and equality of the positive
 sums forces \(I_{2\lambda}^>(\x)\subset I_1(\y)\). One obtains
 \(I_{2\lambda}^>(\x)\subset I_1(\y)\subset I_{2\lambda}^\geq(\x)\) and, since
-\(\y\in C_{l,s}\), \(l\leq |I_1(\y)|\leq s'\).
+\(\y\in C_{l,s}\), \(l\leq |I_1(\y)|\leq s\).
 
 It remains to exhibit \(\tilde{T}\in\mathcal{S}_{l-1}(\omega(\x))\),
 \(\tilde{\imath}\in I^=_{[l]}(\x)\setminus\tilde{T}\) and \(\tilde{U}\) as in
@@ -579,10 +589,10 @@ nonempty. Pick \(\tilde{\imath}\) in that set and
 \(\tilde{\imath}\in I^=_{[l]}(\x)\setminus\tilde{T}\). The residual
 \(I_1(\y)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\) lies in
 \(I_{2\lambda}^=(\x)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\) and has
-cardinality \(|I_1(\y)|-l\leq s'-l\). Hence there exists
+cardinality \(|I_1(\y)|-l\leq s-l\). Hence there exists
 \(\tilde{U}\subset I_{2\lambda}^=(\x)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\)
 with \(I_1(\y)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\subset\tilde{U}\) and
-\(|\tilde{U}|=\min\bigl\{\bigl|I_{2\lambda}^=(\x)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\bigr|,s'-l\bigr\}\).
+\(|\tilde{U}|=\min\bigl\{\bigl|I_{2\lambda}^=(\x)\setminus(\tilde{T}\cup\{\tilde{\imath}\})\bigr|,s-l\bigr\}\).
 Therefore
 \(\tilde{T}\cup\{\tilde{\imath}\}\subset I_1(\y)\subset\tilde{T}\cup\{\tilde{\imath}\}\cup\tilde{U}\).
 As already observed, \(\y_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\)
@@ -760,38 +770,31 @@ As already discussed, \(\y\) also satisfies (a), which completes the proof.
 \section{Closed form and a computational scheme}
 \label{sec:closed}
 
-The previous result yields an explicit description of \(\prox_h\).
-If \(|I_{\mathcal{A}}(\x)|<l\), then \(\prox_h(\x)=\emptyset\). Otherwise,
+The previous result yields an explicit description of \(\prox_h\). One has
 $$
 \prox_h(\x)=\left\{\mathbf{U}_{\mathcal{A}(T)} \y\mid \y \in P_{\mathcal{B}(T)}\left(\x_{\mathcal{A}(T)}\right),\ T\in\mathcal{T}(\x)\right\},
 $$
 where
 $$
 \mathcal{T}(\x)=
-\begin{cases}\left\{T\mid I_{[s']}^>({\x}) \subsetneq T \subset I_{[s']}^\geq({\x}),\ |T|=s'\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s']}>2 \lambda \\
-\left\{T\mid I_{[s']}^>({\x}) \subset T \subset I_{[s']}^\geq({\x}),\ |T| \leq s'\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s']}=2 \lambda \\
-\left\{T\mid I_{2\lambda}^>({\x}) \subset T \subset I_{2\lambda}^\geq({\x}),\ |T| < s'\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s']}<2 \lambda
-\\\left\{T\mid I_{[l]}^>({\x}) \subsetneq T \subset I_{[l]}^\geq({\x}),\ l\leq|T| \leq s'\right\}, &\ \omega(\x)_{[l]}=2 \lambda  \\
+\begin{cases}\left\{T\mid I_{[s]}^>({\x}) \subsetneq T \subset I_{[s]}^\geq({\x}),\ |T|=s\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s]}>2 \lambda \\
+\left\{T\mid I_{[s]}^>({\x}) \subset T \subset I_{[s]}^\geq({\x}),\ |T| \leq s\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s]}=2 \lambda \\
+\left\{T\mid I_{2\lambda}^>({\x}) \subset T \subset I_{2\lambda}^\geq({\x}),\ |T| < s\right\}, &\ \omega(\x)_{[l]}>2 \lambda,\ \omega(\x)_{[s]}<2 \lambda
+\\\left\{T\mid I_{[l]}^>({\x}) \subsetneq T \subset I_{[l]}^\geq({\x}),\ l\leq|T| \leq s\right\}, &\ \omega(\x)_{[l]}=2 \lambda  \\
 \left\{T\mid I_{[l]}^>({\x}) \subsetneq T \subset I_{[l]}^\geq({\x}),\ |T|=l\right\}, &\ \omega(\x)_{[l]}<2 \lambda
 \end{cases}.
 $$
 This description suggests the following procedure for computing one element of
-\(\prox_h\). The algorithm evaluates \(I_{\mathcal{A}}(\x)\), returns
-\(\emptyset\) if fewer than \(l\) groups are activatable, and selects
-\(\mathcal{S}_{s'}(\omega(\x))\) or \(\mathcal{S}_l(\omega(\x))\).
+\(\prox_h\). It selects \(\mathcal{S}_{s}(\omega(\x))\) or
+\(\mathcal{S}_l(\omega(\x))\) and returns the corresponding groupwise projection.
 
 \begin{algorithm}[ht]
 \caption{Group-sparse proximal mapping}
 \label{alg:proxh}
 \Input{\(\x\in\R^n\),\ \(l\leq s\leq m\) and \(\lambda \in \R\)}\\
-\Output{\(\U\in\prox_h(\x)\) or \(\emptyset\)}
+\Output{\(\U\in\prox_h(\x)\)}
     \begin{algorithmic}[1]
-    \State compute \(I_{\mathcal{A}}(\x)\)
-    \If{\(l\geq 1\) \textbf{and} \(|I_{\mathcal{A}}(\x)|<l\)}
-        \State \Return \(\emptyset\)
-    \EndIf
-    \State \(s'\gets\min\{s,|I_{\mathcal{A}}(\x)|\}\)
-    \State compute \(S\in \mathcal{S}_{s'}(\omega(\x))\) (arbitrarily chosen)
+    \State compute \(S\in \mathcal{S}_{s}(\omega(\x))\) (arbitrarily chosen)
 \If{\(\omega(\x)_{[l]} >2\lambda\)}
 \State \(T\gets\{i\in S\mid\omega(\x)_i >2\lambda\}\)
 \Else
@@ -810,61 +813,117 @@ If \(\omega(\x)_{[l]} \leq 2\lambda\), it is enough to compute a selection
 \(\omega(\x)_{[l]} > 2\lambda\), so \(S\) can sometimes be shortened. A more
 refined implementation would first obtain a selection of \(l\) elements, read
 off \(\omega(\x)_{[l]}\), and stop if \(\omega(\x)_{[l]} \leq 2\lambda\). Otherwise one continues until \(S\in \mathcal{S}_s(\omega(\x))\) is filled or
-a newly inserted entry is at most \(2\lambda\).
+a newly inserted entry is at most \(2\lambda\) or, even better, ignore sorting entries below or equal the threshold.
 
 When evaluating \(\omega(\x)\) in \eqref{omega}, the projection onto each
 \(D_i\) computed for \(d_{D_i}\) should be stored and reused in
 \(P_{\mathcal{B}(T)}\).
 \end{remark}
 
-\section{Appropriate modelling and empty proximal mappings}
-\label{sec:emptyfix}
+\section{Group-dependent penalties}
+\label{sec:weights}
 
-\Cref{alg:proxh} returns \(\emptyset\) when \(l\ge 1\) and
-\(|I_{\mathcal{A}}(\x)|<l\). That answer is faithful to \eqref{h}: there is no
-feasible point of \(B\cap C_{l,s}\) assembled from groupwise projections. A
-proximal-gradient loop, however, cannot take a step from an empty mapping.
+The regularizer \eqref{h} charges every active group the same penalty. The
+proximal mapping extends to penalties that depend on the group. For
+\(\lambda_1,\ldots,\lambda_m\geq 0\), set
+\begin{equation}
+\label{hlambda}
+h_{\lambda}(\x)\coloneqq\sum_{i=1}^m \lambda_i\, g(\x)_i+\chi_{B\cap C_{l,s}}(\x).
+\end{equation}
+The regularizer \eqref{h} is the special case \(\lambda_i=\lambda\). Define the
+shifted gain \(\rho(\x)\in\R^m\) by
+\begin{equation}
+\label{rho}
+\rho_i(\x)\coloneqq\omega(\x)_i-2\lambda_i, \qquad i=1,\ldots,m.
+\end{equation}
+Its order statistics, and the sets \(\mathcal{S}_k(\rho(\x))\) built from them,
+are those of \Cref{sec:notation} applied to the vector \(\rho(\x)\).
 
-The emptiness is a modelling symptom, not a defect of the oracle. It appears
-when \(D_i\) contains the origin as an accumulation point, so that a group may
-be recorded as active with an arbitrarily small block. The same geometry lets
-a method meet the quota \(l\) by allocating a negligible amount on extra groups,
-which is not the diversification the lower bound was meant to enforce. If a
-group is to count as active, its block should be large enough to matter in the
-application.
+\begin{proposition}
+\label{prop:weights}
+Let \(\x\in\R^n\). Then \(\prox_{h_{\lambda}}(\x)\) is nonempty. A vector
+\(\U\) lies in \(\prox_{h_{\lambda}}(\x)\) if and only if it satisfies the
+conditions of \Cref{thm:proxh} with \(\omega(\x)\) replaced by \(\rho(\x)\) and
+with the threshold \(2\lambda\) replaced by \(0\). The same substitution
+translates the description of \(\mathcal{T}(\x)\) in \Cref{sec:closed}.
+\end{proposition}
 
-A direct way to encode that requirement is to cut from each \(D_i\) the open
-ball of radius \(\varepsilon_i>0\) about the origin, in the Euclidean or
-\(\ell_\infty\) norm,
+\begin{proof}
+Nonemptiness is the argument of \Cref{sec:emptyfix}. It uses
+\(\mathbf{0}\notin D_i\) and does not depend on the penalties. Let \(\U\) and
+\(\y\) satisfy condition~(a) of \Cref{thm:proxh}, and write \(I\coloneqq I_1(\U)\)
+and \(J\coloneqq I_1(\y)\). \Cref{lem:toomega} gives
 \[
-D_i^{\varepsilon}\coloneqq D_i\setminus\bigl\{\z\in\R^{n_i}:\|\z\|<\varepsilon_i\bigr\}.
+\|\U-\x\|_2^2-\|\y-\x\|_2^2=\sum_{i\in J}\omega(\x)_i-\sum_{i\in I}\omega(\x)_i.
 \]
-If \(\forall i\ \varepsilon_i\) is small enough that \(D_i\) is not swallowed by the
-ball, then \(D_i^{\varepsilon}\) is closed and does not contain the origin, so
-every group is activatable for every \(\x\). The modified
-regularizer then has a nonempty proximal mapping everywhere, therefore the emptiness test and the
-computation of \(s'\) in
-\Cref{alg:proxh} are redundant (\(s'=s\)) and one may continue from the
-selection of \(S\in\mathcal{S}_s(\omega(\x))\). The origin remains available through \(B\), so a group can still be switched
-off, and an active group must leave the ball. Thus, the chosen radius should be a meaningful
-scale of the model rather than a machine epsilon.
-
-The portfolio of \cref{ex:carteira} is already on the safe side of that
-geometry as \(D_i=\Delta_{n_i}\) does not contain the origin, so every sector is
-activatable and \(\prox_h\) is nonempty. A different modelling issue remains.
-A point of \(\Delta_{n_i}\) may still put an arbitrarily small weight on
-some assets. In the same spirit as the hole about the origin, one may cut
-each coordinate out of the open interval \((0,t)\), for instance \(t=0.05\):
+If \(\y\in\prox_{h_{\lambda}}(\x)\) and \(\U\) is feasible for \(h_{\lambda}\),
+the proximal inequality, multiplied by two, now reads
 \[
-D_i^{t}
-=\Delta_{n_i}\setminus\bigcup_{k=1}^{n_i}\bigl\{\z\in\R^{n_i}:\z_k\in(0,t)\bigr\}
-=\bigl\{\z\in\Delta_{n_i}:\z_k\notin(0,t)\text{ for all }k\bigr\}.
+2\Bigl(\sum_{i\in I}\lambda_i-\sum_{i\in J}\lambda_i\Bigr)+\|\U-\x\|_2^2-\|\y-\x\|_2^2\geq 0.
 \]
-Note that \(D_i^{t}\) is still closed. The origin remains available by switching the
-whole group off through \(B\).
+Substituting the identity above rearranges it to
+\begin{equation}
+\label{proxy-rho}
+\sum_{i\in J}\rho_i(\x)-\sum_{i\in I}\rho_i(\x)\geq 0,
+\end{equation}
+which is \eqref{proxy} with the summands \(\omega(\x)_i-2\lambda\) replaced by
+\(\rho_i(\x)\). From this line on, the proof of \Cref{thm:proxh} uses those
+summands only through their order statistics, and through the fact that a
+vanishing summand does not change the sum. Where that argument compares
+\(\omega(\x)_i-2\lambda\) with \(\omega(\x)_j-2\lambda\), the same lines compare
+\(\rho_i(\x)\) with \(\rho_j(\x)\), and a shifted gain equal to zero may be kept
+or dropped. Both properties hold for \(\rho(\x)\) with threshold \(0\). The case distinction on
+the sign of \(\rho(\x)_{[l]}\) therefore replaces the case distinction on
+\(\omega(\x)_{[l]}-2\lambda\), and every set built from \(\omega(\x)\) and from
+the level \(2\lambda\) is replaced by the corresponding set built from
+\(\rho(\x)\) and from the level \(0\).
 
-If one keeps the origin in \(D_i\) for modelling reasons and emptiness (\(P_{D_i}(\x_{G_i})=\{\mathbf{0}\}\)) occurs as a coincidence at a single point, then a small
-perturbation of \(\x_{G_i}\) is viable a numerical safeguard. This may happen, for instance, if \(D_i=\R^{n_i}\) and \(\x_{G_i}=\mathbf{0}\).
+If \(\lambda_i=\lambda\) for every \(i\), then \(\rho_i(\x)=\omega(\x)_i-2\lambda\).
+The order of \(\rho(\x)\) agrees with the order of \(\omega(\x)\), and
+\(\rho_i(\x)>0\) if and only if \(\omega(\x)_i>2\lambda\). The statement
+reduces to \Cref{thm:proxh}.
+\end{proof}
+
+The order of \(\omega(\x)\) decides the support of \(h_{\lambda}\) only in that
+equal-penalty case. A group with a large geometric gain and a large penalty
+can have a smaller shifted gain than a group with a modest geometric gain and
+a small penalty, so the set returned by \Cref{alg:proxh} need not be a
+proximal support of \(h_{\lambda}\).
+
+\begin{example}
+\label{ex:unequal}
+Take two groups, \(l=0\), \(s=1\), \(\omega(\x)=(5,4)\) and
+\((\lambda_1,\lambda_2)=(1,0.1)\). Both geometric gains exceed twice the
+penalty of their own group, since \(5>2\) and \(4>0.2\), and the larger entry
+of \(\omega(\x)\) is the first group. The shifted gains are
+\(\rho(\x)=(3,3.8)\), so a proximal point activates the second group instead.
+\end{example}
+
+\Cref{alg:proxh} is unchanged in the projection it returns. It changes in the
+vector it sorts and the threshold it reads: the order statistics and the
+test against \(2\lambda\) are taken on \(\rho(\x)\), against zero.
+
+\begin{algorithm}[ht]
+\caption{Group-sparse proximal mapping with group-dependent penalties}
+\label{alg:proxhlam}
+\Input{\(\x\in\R^n\),\ \(l\leq s\leq m\) and \(\lambda_i\geq 0\)}\\
+\Output{\(\U\in\prox_{h_{\lambda}}(\x)\)}
+    \begin{algorithmic}[1]
+    \State compute \(\rho_i(\x)\gets \omega(\x)_i-2\lambda_i\) for \(i=1,\ldots,m\)
+    \State compute \(S\in \mathcal{S}_{s}(\rho(\x))\) (arbitrarily chosen)
+\If{\(\rho(\x)_{[l]} >0\)}
+\State \(T\gets\{i\in S\mid \rho_i(\x) >0\}\)
+\Else
+\State use \(S\) to compute \(T\in \mathcal{S}_l(\rho(\x))\)
+\EndIf
+\State \(\U\gets \mathbf{U}_{\mathcal{A}(T)} P_{\mathcal{B}(T)}\left(\x_{\mathcal{A}(T)}\right)\)
+\end{algorithmic}
+\end{algorithm}
+
+When \(\lambda_i=\lambda\) for every \(i\), one has
+\(\mathcal{S}_{k}(\rho(\x))=\mathcal{S}_{k}(\omega(\x))\) and
+\(\{\,i:\rho_i(\x)>0\,\}=\{\,i:\omega(\x)_i>2\lambda\,\}\), so
+\Cref{alg:proxhlam} is analogous to \Cref{alg:proxh}. 
 
 \section{A sector portfolio computation}
 \label{sec:numerics}
@@ -1032,20 +1091,18 @@ single-name rows is of the same order as the uncertainty of one test year.
 
 We have extended the proximal calculus of \cite{beck2018} from an upper
 cardinality bound to a genuine window \(l\le\|g(\x)\|_0\le s\). The lower
-bound changes the geometry of \(\prox_h\). It can be empty, and when
+bound changes the geometry of \(\prox_h\): when
 \(\omega(\x)_{[l]}\le 2\lambda\) one must activate zero-gain (or even
-negative-gain) groups in order to meet the quota \(l\). Both phenomena are
-invisible when \(l=0\).
+negative-gain) groups in order to meet the quota \(l\). That phenomenon is
+invisible when \(l=0\). Because each \(D_i\) excludes the origin, the mapping
+itself is nonempty at every centre.
 
 The resulting oracle is the proximal step of the spectral method in
-\cref{sec:numerics}. Under the modelling of \cref{sec:emptyfix}, a hole about
-the origin in each \(D_i\) makes every group activatable, so the
-emptiness of \(\prox_h\) need not arise.
+\cref{sec:numerics}.
 
 We do not recast the stationarity hierarchy of
 \cite{beck2018} for the window \(C_{l,s}\). Once \(\prox_h\) is available those
-conditions transfer formally, except that proximal stationarity is undefined
-at centres with fewer than \(l\) activatable groups.
+conditions transfer formally.
 
 \bibliographystyle{plainnat}
 \bibliography{paper_extra}
