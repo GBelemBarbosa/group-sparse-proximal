@@ -810,10 +810,19 @@ If \(\omega(\x)_{[l]} \leq 2\lambda\), it is enough to compute a selection
 \(\omega(\x)\), which is cheaper than an initial selection
 \(S\in\mathcal{S}_s(\omega(\x))\) when \(l<s\). Moreover, entries with
 \(\omega(\x)_i \leq 2\lambda\) are irrelevant when
-\(\omega(\x)_{[l]} > 2\lambda\), so \(S\) can sometimes be shortened. A more
-refined implementation would first obtain a selection of \(l\) elements, read
-off \(\omega(\x)_{[l]}\), and stop if \(\omega(\x)_{[l]} \leq 2\lambda\). Otherwise one continues until \(S\in \mathcal{S}_s(\omega(\x))\) is filled or
-a newly inserted entry is at most \(2\lambda\) or, even better, ignore sorting entries below or equal the threshold.
+\(\omega(\x)_{[l]} > 2\lambda\), so \(S\) can sometimes be shortened. 
+
+A more refined implementation avoids sorting any entry that cannot change the support.
+When \(s=m\), one pass keeps every index with \(\omega(\x)_i>2\lambda\) and records
+the indices tied at \(2\lambda\). If at least \(l\) groups lie strictly above the
+threshold, that set is a proximal support. Otherwise the ties are added. If the
+set is still shorter than \(l\), the \(l-|T|\) largest entries strictly below
+\(2\lambda\) are selected and added. If
+\(l=0\) as well, the pass stops at the strict positives and nothing is sorted.
+When \(l=0\) and \(s<m\), only entries above \(2\lambda\) are eligible. If there
+are at most \(s\) of them they are all kept; otherwise the smallest
+\(|\{i:\omega(\x)_i>2\lambda\}|-s\) of them are discarded. 
+See \autoref{sec:complexity} for a more in depth analysis of an efficient implementation.
 
 When evaluating \(\omega(\x)\) in \eqref{omega}, the projection onto each
 \(D_i\) computed for \(d_{D_i}\) should be stored and reused in
@@ -923,7 +932,69 @@ test against \(2\lambda\) are taken on \(\rho(\x)\), against zero.
 When \(\lambda_i=\lambda\) for every \(i\), one has
 \(\mathcal{S}_{k}(\rho(\x))=\mathcal{S}_{k}(\omega(\x))\) and
 \(\{\,i:\rho_i(\x)>0\,\}=\{\,i:\omega(\x)_i>2\lambda\,\}\), so
-\Cref{alg:proxhlam} is analogous to \Cref{alg:proxh}. 
+\Cref{alg:proxhlam} is analogous to \Cref{alg:proxh}.
+
+\subsection{Complexity}
+\label{sec:complexity}
+
+The bound is for the procedure in the remark after \Cref{alg:proxh}, read on
+the shifted gains of \Cref{alg:proxhlam}. The equal-penalty map is the same
+arithmetic on \(\omega(\x)_i-2\lambda\). The cost below is the number of comparisons among the \(m\) scalars
+\(\rho_i(\x)\).
+
+Let \(w\) be the number of gains in the window that still contains the
+requested rank. That rank is found by partitioning about a pivot taken
+from a constant number of positions in the window. The search
+continues only on the side that contains the rank. If the pivot equals the
+gain immediately outside the window, one pass gathers every equal copy and
+the search steps past that run, so a window of equal gains costs \(\Theta(w)\)
+rather than one copy per partition. A cut that discards less than one eighth
+of the current window exchanges a constant number of entries and continues.
+Nothing stops a long chain of unbalanced cuts, so the worst case is
+\(O(w^2)\) comparisons, the cost of a chain of extreme pivots in this
+partition \cite[\S5.2.2]{knuth1998}. For a uniformly random order of the
+window the expectation is \(\Theta(w)\): this is the bound for one pivot
+position \cite[Ex.~5.2.2--32]{knuth1998}, and it remains linear when the
+pivot is the median of a fixed number of sample positions
+\cite{kirschenhofer1997,grubel1999}.
+
+The support does not require every gain to be ordered. If \(s=m\), one pass
+splits the gains into the strict positives, the zeros, and the strict
+negatives, at cost \(\Theta(m)\). At least \(l\) strict positives, and in
+particular \(l=0\), end the search: no order statistic. If the positives fall
+short of \(l\) while the nonnegative gains do not, the support has cardinality
+\(l\) and is read from that pass, including all positives and
+\(l-\#positives\) zero gains. An order statistic is formed only when fewer
+than \(l\) gains are nonnegative, and then only among those negatives with partition rank \(l-\#nonnegative\), at expected cost \(\Theta(\#negatives)\).
+
+If \(l=0\) and \(s<m\), one pass collects the strict positives, at cost
+\(\Theta(m)\). They are all kept when there are at most \(s\) of them. If
+\(\#positives>s\), the order statistic of rank \(s\) is computed in the
+positive block alone, at expected cost \(\Theta(\#positives)\). 
+
+If \(0<l\leq s<m\), the order statistic of rank \(l\) is computed among all
+\(m\) gains, at expected cost \(\Theta(m)\), and the other \(m-l\) entries
+are left as they stand. The search stops when that \(l\)-th gain is
+nonpositive or when \(l=s\). When it is positive and \(l<s\), one pass
+collects the strict positives beyond it with cost \(\Theta(m-l)\). They are kept if they fit under
+\(s\); otherwise the order statistic of rank \(s-l\) is taken only inside
+that block of size \(q=\#positives-l\), at expected cost \(\Theta(q)\).
+
+A call therefore uses a number of gain comparisons linear in \(m\) on
+average, and equal to a single pass in every case that asks for no rank. The quadratic 
+bound is confined to the window actually partitioned. As written, 
+\Cref{alg:proxh,alg:proxhlam} begin with a
+selection of rank \(s\). The method described above uses rank \(l\) whenever an
+\(l\)-th gain is already nonpositive after an \(l\) order statistic or the sign split, when applicable. 
+It also does not unnecessarily partition a window that cannot fully meet the support sign requirements, 
+keeping the window as small as possible and only partitioning when necessary.
+
+Those comparison counts are not the whole evaluation. Writing \(\U\) is a
+further \(O(n)\) update where each coordinate is set, an inactive group to zero
+and an active group to the projection already stored for it. The projection
+of \(\x_{G_i}\) onto \(D_i\) is computed once while forming \(\rho(\x)\) and
+is not counted above. Its cost depends on the sets \(D_i\) and is left out
+of the bound.
 
 \section{A sector portfolio computation}
 \label{sec:numerics}
