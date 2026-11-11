@@ -940,7 +940,9 @@ When \(\lambda_i=\lambda\) for every \(i\), one has
 The bound is for the procedure in the remark after \Cref{alg:proxh}, read on
 the shifted gains of \Cref{alg:proxhlam}. The equal-penalty map is the same
 arithmetic on \(\omega(\x)_i-2\lambda\). The cost below is the number of comparisons among the \(m\) scalars
-\(\rho_i(\x)\).
+\(\rho_i(\x)\). We use big-O notation for the standard definition
+\cite[\S1.2.11.1]{knuth1997}, and \(\Theta\) for its two-sided form,
+\(f=\Theta(g)\) when \(f\) is at most and at least a constant multiple of \(g\).
 
 Let \(w\) be the number of gains in the window that still contains the
 requested rank. That rank is found by partitioning about a pivot taken
