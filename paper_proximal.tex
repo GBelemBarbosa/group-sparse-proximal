@@ -151,13 +151,13 @@ computed using a classical Markowitz model with cardinality constraints.
 Fix a partition \(\{G_i\}_{i=1}^m\) of \(\{1,2,\ldots,n\}\) into \(m\) groups
 of sizes \(n_1,\ldots,n_m\). Without loss of generality, we may assume that 
 \begin{align*}
-G_1 &\coloneqq\left\{1,2, \ldots, n_1\right\}, \\
-G_2 &\coloneqq\left\{n_1+1, n_1+2, \ldots, n_1+n_2\right\}, \ldots, \\
-G_m &\coloneqq\left\{n_{m-1}+1, n_{m-1}+2, \ldots, n\right\}.
+G_1 & = \left\{1,2, \ldots, n_1\right\}, \\
+G_2 & = \left\{n_1+1, n_1+2, \ldots, n_1+n_2\right\}, \ldots, \\
+G_m & = \left\{n_{m-1}+1, n_{m-1}+2, \ldots, n\right\}.
 \end{align*}
 For \(\x\in\R^n\) and \(T\subset \{1,\ldots,n\}\), write \(\x_T\) for the
-subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\) indicates
-nonempty groups, that is
+subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\)
+indicates nonzero groups, that is,
 $$
 g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \mathbf{0}, \\
 0, & \text{otherwise.}\end{cases}
@@ -200,8 +200,10 @@ problem:
 where
 \begin{equation}
 \label{h}
-h(\x) \coloneqq\lambda\|g(\x)\|_0+\chi_{B \cap C_{l,s}}(\x).
+h(\x) \coloneqq\lambda\|g(\x)\|_0+\chi_{B \cap C_{l,s}}(\x),
 \end{equation}
+with $\chi$ representing the convex analysis indicator function.
+
 \Cref{sec:weights} replaces the common penalty \(\lambda\) by a penalty
 \(\lambda_i\) on group \(i\). The arguments through \Cref{sec:closed} treat the
 equal-penalty case \(\lambda_i=\lambda\).
@@ -213,7 +215,7 @@ The proximal mapping of \(h\)
 \prox_{h}(\x)&\coloneqq\argmin_{\U\in\R^n}\left\{h(\U)+ \frac{1}{2}\norm{\U-\x}^2 \right\}
 \end{aligned}
 \end{equation}
-was characterized in \cite{beck2018} for \(l=0\). \Cref{thm:proxh} below
+was fully characterized in \cite{beck2018} for \(l=0\). \Cref{thm:proxh} below
 extends that characterization to \(0<l\leq s\).
 
 \section{Origin exclusion and modelling}
@@ -386,7 +388,7 @@ Let \(\x \in \R^n\) and \(T, S \subset\{1,2, \ldots, m\}\). Then, for all
 \(\z, \y \in \R^n\) satisfying
 $$
 \z_{G_i} \in\left\{\begin{array} { l l }
-{ P _ { D _ { i } } ( \x _ { G _ { i } } ) , } & { i \in T  } \\
+{ P_{ D_{ i } } ( \x_{ G_{ i } } ) , } & { i \in T  } \\
 { \{ \mathbf { 0 } \} , } & { i \notin T  }
 \end{array}, \quad \y _ { G _ { i } } \in \left\{\begin{array}{ll}
 P_{D_i}\left(\x_{G_i}\right), & i \in S \\
