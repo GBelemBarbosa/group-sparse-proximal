@@ -50,7 +50,7 @@
 \algnewcommand{\Input}[1]{\textbf{Input:} #1}
 \algnewcommand{\Output}[1]{\textbf{Output:} #1}
 
-\title{The group-sparse proximal mapping\\with lower and upper cardinality bounds}
+\title{The group-sparse proximal mapping with lower and upper cardinality bounds}
 \author{Gabriel Belém Barbosa\thanks{IMECC, University of Campinas (UNICAMP).
 \texttt{gggt4@ime.unicamp.br}}
 \and Paulo J.\ S.\ Silva\thanks{IMECC, University of Campinas (UNICAMP).}}
@@ -74,7 +74,7 @@ proximal point together with an algorithm to compute one.
 
 \noindent\textbf{Keywords:}
 group sparsity; \(\ell_0\) regularization; proximal mapping; cardinality
-constraints; composite optimization.
+constraints; composite opt mimization.
 
 \section{Introduction}
 \label{sec:intro}
@@ -116,29 +116,28 @@ point and give an algorithm to compute one.
 \label{sec:problem}
 
 Fix a partition \(\{G_i\}_{i=1}^m\) of \(\{1,2,\ldots,n\}\) into \(m\) groups
-of sizes \(n_1,\ldots,n_m\). After a harmless reindexing,
-\[
-\begin{aligned}
-G_1 & \coloneqq\left\{1,2, \ldots, n_1\right\}, G_2\coloneqq\left\{n_1+1, n_1+2, \ldots, n_1+n_2\right\}, \ldots, \\
-G_m & \coloneqq\left\{n_{m-1}+1, n_{m-1}+2, \ldots, n\right\} .
-\end{aligned}
-\]
+of sizes \(n_1,\ldots,n_m\). Without loss of generality, we may assume that 
+\begin{align*}
+G_1 &\coloneqq\left\{1,2, \ldots, n_1\right\}, \\
+G_2 &\coloneqq\left\{n_1+1, n_1+2, \ldots, n_1+n_2\right\}, \ldots, \\
+G_m &\coloneqq\left\{n_{m-1}+1, n_{m-1}+2, \ldots, n\right\}.
+\end{align*}
 For \(\x\in\R^n\) and \(T\subset \{1,\ldots,n\}\), write \(\x_T\) for the
-subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\) that
-marks nonempty groups is
+subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\) indicates
+nonempty groups, that is
 $$
 g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \mathbf{0}, \\
-0, & \text{otherwise }\end{cases}.
+0, & \text{otherwise.}\end{cases}
 $$
-Thus \(g(\x)_i=1\) means that group \(G_i\) is \emph{active} for \(\x\),
-otherwise it is \emph{inactive}. For \(l,s\in \N_0\) with \(l\leq s\leq m\),
+Whenever \(g(\x)_i=1\), the group \(G_i\) is called \emph{active} for \(\x\).
+Otherwise, it is \emph{inactive}. For \(l,s\in \N_0\) with \(l\leq s\leq m\),
 $$
 C_{l,s}\coloneqq\left\{\x \in \R^n:l\leq\|g(\x)\|_0 \leq s\right\}
 $$
 is the set of vectors with at least \(l\) and at most \(s\) active groups.
-Ordinary (ungrouped) sparsity is the special case in which every group is a
-singleton, so that \(C_{l,s}\) consists of the \(s\)-sparse vectors with at
-least \(l\) nonzero entries.
+Ordinary sparsity is the special case in which every group is a singleton, so
+that \(C_{l,s}\) consists of the \(s\)-sparse vectors with at least \(l\)
+nonzero entries.
 
 The problem under study is
 \begin{equation}
@@ -155,18 +154,17 @@ continuously differentiable and bounded from below, and
 \label{B}
 B \coloneqq \prod_{i=1}^m\left(D_i \cup\{\mathbf{0}\}\right)=\left(D_1 \cup\{\mathbf{0}\}\right) \times\left(D_2 \cup\{\mathbf{0}\}\right) \times \cdots \times\left(D_m \cup\{\mathbf{0}\}\right),
 \end{equation}
-with each \(D_i \subset \R^{n_i}\) nonempty and closed. This problem is equivalent, in
-composite unconstrained form,
+with each \(D_i \subset \R^{n_i}\) nonempty and closed. This problem is
+equivalent to the following composite optimization problem:
 \begin{equation}
 \label{P}
 \min _{\x \in \R^n} f(\x)+h(\x),
 \end{equation}
-with
+where
 \begin{equation}
 \label{h}
 h(\x) \coloneqq\lambda\|g(\x)\|_0+\delta_{B \cap C_{l,s}}(\x).
 \end{equation}
-Problem~\eqref{P} has the familiar shape of proximal composite optimization.
 The proximal mapping of \(h\)
 \begin{equation}
 \label{prox}
@@ -175,7 +173,7 @@ The proximal mapping of \(h\)
 \end{aligned}
 \end{equation}
 was characterized in \cite{beck2018} for \(l=0\). \Cref{thm:proxh} below
-extends that characterization to \(l\leq s\).
+extends that characterization to \(l \geq 0\).
 
 \section{Motivating examples}
 \label{sec:examples}
@@ -196,20 +194,19 @@ where each \(D_i\) is the probability simplex on sector \(i\),
 \Delta_{n_i}
 =\bigl\{\z\in\R^{n_i}:\z\ge\mathbf{0},\ \mathbf{1}^\top\z=1\bigr\},
 \]
-so that
-\(B=\prod_{i=1}^m(\Delta_{n_i}\cup\{\mathbf{0}\})\).
-Here \(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns,
-\(\mathbf{C} \in \R^{n \times n}\) is a covariance matrix, and \(\gamma>0\) trades
-off risk against return. An active sector has nonnegative weights that sum
-to one on its own assets and an inactive sector is the origin. An
-upper bound \(s\) caps how many sectors may be used and a positive lower bound \(l\)
-enforces a minimal diversification
-across them, in the same spirit as sparse Markowitz models
-\cite{brodie2009}.
+so that \(B=\prod_{i=1}^m(\Delta_{n_i}\cup\{\mathbf{0}\})\). Here
+\(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns, \(\mathbf{C} \in
+\R^{n \times n}\) is a covariance matrix, and \(\gamma>0\) trades off risk
+against return. An active sector has nonnegative weights that sum to one on its
+own assets, and an inactive sector is represented by the zero subvector. An
+upper bound \(s\) caps how many sectors may be used, and a positive lower bound
+\(l\) enforces a minimal diversification across them, in the same spirit as
+sparse Markowitz models \cite{brodie2009}.
 \end{example}
 
 \begin{example}[cardinality-constrained sparse regression]
 \label{ex:imbuia}
+\todo{I am not sure we can keep this without proper citation.}
 An instance of \eqref{P} with singleton groups is
 \begin{equation}
 \label{regress2}
@@ -228,11 +225,12 @@ known structure.
 \section{Notation}
 \label{sec:notation}
 
-We first present a few auxiliary objects. Given \(\V \in \R^m\) and
-\(i=1,2,\ldots,m\), \(\V_{[i]}\) denotes the \(i\)-th largest entry of
-\(\V\), so that \(\V_{[1]}\geq \V_{[2]}\geq\hdots\geq\V_{[m]}\). The family
+We first introduce auxiliary notation. Given \(\V \in \R^m\) and
+\(i=1,2,\ldots,m\), \(\V_{[i]}\) denotes the \(i\)-th largest entry of \(\V\),
+so that \(\V_{[1]}\geq \V_{[2]}\geq\hdots\geq\V_{[m]}\). The family
 \begin{equation}\label{defS}
-    \mathcal{S}_i(\V)\coloneqq\{S \cup T\mid S\coloneqq\{j\mid\V_j>\V_{[i]}\},\ T\subset\{j\mid\V_j=\V_{[i]}\},\ | S \cup T | = i\}\quad \forall i=1,2,\ldots,m
+    \forall i=1,2,\ldots,m,\quad \mathcal{S}_i(\V)\coloneqq\{S \cup T\mid S\coloneqq
+    \{j\mid\V_j>\V_{[i]}\},\ T\subset\{j\mid\V_j=\V_{[i]}\},\ | S \cup T | = i\}
  \end{equation}
 collects every index set of cardinality \(i\) associated with the largest
 entries of \(\V\). The set \(\mathcal{S}_i(\V)\) need not be a singleton,
@@ -244,14 +242,15 @@ since \(\V\) may have ties. For instance, if \(\V = (0\ 0\ 1)^T\), then
 Given \(\x \in \R^n\), the orthogonal projection onto a set \(C\subset\R^n\)
 is
 $$
-P_C(\x)\coloneqq \prox_{\delta_C}(\x)=\argmin_{\y\in C}\|\y-\x\|_2,
+P_C(\x)\coloneqq \prox_{\delta_C}(\x)=\argmin_{\y\in C}\|\y-\x\|_2.
 $$
-and the distance to \(D_i\) is
+Observe that it may be empty, as $C$ is not assumed to be closed. Moreover,
 $$
-d_{D_i}\left(\x_{G_i}\right)\coloneqq\min _{\z \in D_i}\left\|\x_{G_i}-\z\right\|_2\quad \forall i=1,2, \ldots, m .
+d_C(\x)\coloneqq \inf_{\y\in C}\|\y-\x\|_2
 $$
-The latter is well defined because each \(D_i\) is closed. The gain map
-\(\omega: \R^n \to \R^m\),
+is the respective distance. In particular, the distance of \(\x_{G_i}\) to
+\(D_i\) is denoted as $d_{D_i}(\x_{G_i})$. It is attained because each \(D_i\)
+is closed. The gain map \(\omega: \R^n \to \R^m\),
 \begin{equation}
 \label{omega}
 \omega(\x)_i\coloneqq\left\|\x_{G_i}\right\|_2^2-d_{D_i}^2\left(\x_{G_i}\right)\quad \forall i=1,2, \ldots, m,
