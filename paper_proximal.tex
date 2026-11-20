@@ -21,6 +21,10 @@
 \makeatother
 \usepackage[colorlinks,citecolor=blue!50!black,linkcolor=blue!50!black]{hyperref}
 \usepackage[nameinlink,noabbrev]{cleveref}
+
+% Todo notes
+\usepackage[dvipsnames]{xcolor}
+\usepackage[color=Goldenrod]{todonotes}
 % amsmath measures a tagged equation twice; write the link anchor once.
 \makeatletter
 \let\Hy@saved@make@anchor\Hy@make@anchor
@@ -59,7 +63,7 @@
 \algnewcommand{\Input}[1]{\textbf{Input:} #1}
 \algnewcommand{\Output}[1]{\textbf{Output:} #1}
 
-\title{The group-sparse proximal mapping\\with lower and upper cardinality bounds}
+\title{The group-sparse proximal mapping with lower and upper cardinality bounds}
 \author{Gabriel Belém Barbosa\thanks{IMECC, University of Campinas (UNICAMP).
 \texttt{gggt4@ime.unicamp.br}}
 \and Paulo J.\ S.\ Silva\thanks{IMECC, University of Campinas (UNICAMP).}}
@@ -89,28 +93,26 @@ penalty case.
 
 \noindent\textbf{Keywords:}
 group sparsity; \(\ell_0\) regularization; proximal mapping; cardinality
-constraints; composite optimization.
+constraints; composite opt mimization.
 
 \section{Introduction}
 \label{sec:intro}
 
 Group sparsity comprises optimization problems whose decision variable is
-partitioned into disjoint blocks (groups), and in which one wishes to limit or
-penalize the number of nonzero groups. The structure arises whenever
-explanatory variables are highly correlated and must be treated jointly, or
-when the model itself imposes a predetermined grouping
-\cite{yuan2006,simon2013,beck2018}. Standard applications include
-portfolio construction,
-imaging and signal processing, total-variation denoising, compressed sensing
-\cite{donoho2006}, and low-rank approximation; see \cite{beck2018} and the
-references therein.
+partitioned into disjoint blocks (groups) that are expected to be predominantly
+zero at desirable solutions. The structure arises whenever explanatory variables
+are highly correlated and must be treated jointly, or when the model itself
+imposes a predetermined grouping~\cite{yuan2006,simon2013,beck2018}. Standard
+applications include portfolio construction, imaging and signal processing,
+total-variation denoising, compressed sensing~\cite{donoho2006}, and low-rank
+approximation. See \cite{beck2018} and the references therein.
 
 The generic proximal mapping of \cite{beck2018} covers a penalty on the number
 of active groups together with an \emph{upper} bound \(s\) on that number. We enlarge the class slightly by introducing a \emph{lower}
 bound \(l\) as well. The extra constraint controls the maximal sparsity of a
 solution and is useful whenever a minimum level of diversification is
-required: one should not concentrate a portfolio on a handful of sectors
-\cite{brodie2009,beck2018}. Even when the floor is only a target rather
+required. This may be the case, for example, in portfolio optimization, to avoid 
+concentration on a handful of sectors~\cite{brodie2009,beck2018}. Even when the floor is only a target rather
 than a hard modelling constraint, specifying \(l\) is more convenient than
 tuning \(\lambda\) until the recovered support meets a desired minimum size.
 The constraint enforces the cardinality directly, and the grid of candidate
@@ -119,19 +121,19 @@ penalties can be cut accordingly.
 The penalty itself need not be the same for
 every group. A vector \((\lambda_i)_{i=1}^m\) charges group \(i\) its own
 price, which a single \(\lambda\) cannot express, as one group may be more costly
-to activate than another. \Cref{sec:weights} carries the proximal mapping over
+to activate than another. \Cref{sec:weights} carries the proximal operator over
 to that vector, by reading the scalar characterization on the gains shifted by their corresponding
-\(\lambda_i\). The aim of this paper is a closed form for the proximal calculus
-of the resulting regularizer that can be used as a black box inside
-forward--backward methods \cite{moreau1962,beckbook}.
+\(\lambda_i\). The aim of this paper is to present a closed form for the proximal operator
+of the resulting regularization that can be used as a black box inside
+forward--backward methods~\cite{moreau1962,beckbook}.
 
 \paragraph{Contributions.}
-The main result is a characterization of the proximal mapping of this
-regularizer, extending \cite[Theorem~3.2]{beck2018} from an upper bound alone
-to a window on the number of active groups. A lower bound makes the mapping
+The main contributions is the complete characterization of the proximal operator of this
+regularization, extending \cite[Theorem~3.2]{beck2018} from an upper bound alone
+to a two-sided interval on the number of active groups. A lower bound makes the mapping
 sensitive to whether the origin belongs to the group sets. We require each
 \(D_i\) to exclude the origin; \cref{sec:emptyfix} shows that the mapping may
-otherwise be empty even for closed groups. Under that hypothesis we
+be empty otherwise, even for closed group sets. Under that hypothesis we
 describe every proximal point and give an algorithm that computes one. The
 penalty may depend on the group. \Cref{sec:weights} applies the same
 characterization to the gains after subtracting twice the corresponding
@@ -142,29 +144,28 @@ of the gains.
 \label{sec:problem}
 
 Fix a partition \(\{G_i\}_{i=1}^m\) of \(\{1,2,\ldots,n\}\) into \(m\) groups
-of sizes \(n_1,\ldots,n_m\). After a harmless reindexing,
-\[
-\begin{aligned}
-G_1 & \coloneqq\left\{1,2, \ldots, n_1\right\}, G_2\coloneqq\left\{n_1+1, n_1+2, \ldots, n_1+n_2\right\}, \ldots, \\
-G_m & \coloneqq\left\{n_{m-1}+1, n_{m-1}+2, \ldots, n\right\} .
-\end{aligned}
-\]
+of sizes \(n_1,\ldots,n_m\). Without loss of generality, we may assume that 
+\begin{align*}
+G_1 &\coloneqq\left\{1,2, \ldots, n_1\right\}, \\
+G_2 &\coloneqq\left\{n_1+1, n_1+2, \ldots, n_1+n_2\right\}, \ldots, \\
+G_m &\coloneqq\left\{n_{m-1}+1, n_{m-1}+2, \ldots, n\right\}.
+\end{align*}
 For \(\x\in\R^n\) and \(T\subset \{1,\ldots,n\}\), write \(\x_T\) for the
-subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\) that
-marks nonempty groups is
+subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\) indicates
+nonempty groups, that is
 $$
 g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \mathbf{0}, \\
-0, & \text{otherwise }\end{cases}.
+0, & \text{otherwise.}\end{cases}
 $$
-Thus \(g(\x)_i=1\) means that group \(G_i\) is \emph{active} for \(\x\),
-otherwise it is \emph{inactive}. For \(l,s\in \N_0\) with \(0\leq l\leq s\leq m\),
+Whenever \(g(\x)_i=1\), the group \(G_i\) is called \emph{active} for \(\x\).
+Otherwise, it is \emph{inactive}. For \(l,s\in \N_0\) with \(0 \leq l\leq s\leq m\),
 $$
 C_{l,s}\coloneqq\left\{\x \in \R^n:l\leq\|g(\x)\|_0 \leq s\right\}
 $$
 is the set of vectors with at least \(l\) and at most \(s\) active groups.
-Ordinary (ungrouped) sparsity is the special case in which every group is a
-singleton, so that \(C_{l,s}\) consists of the \(s\)-sparse vectors with at
-least \(l\) nonzero entries.
+Ordinary sparsity is the special case in which every group is a singleton, so
+that \(C_{l,s}\) consists of the \(s\)-sparse vectors with at least \(l\)
+nonzero entries.
 
 The problem under study is
 \begin{equation}
@@ -183,13 +184,12 @@ B \coloneqq \prod_{i=1}^m\left(D_i \cup\{\mathbf{0}\}\right)=\left(D_1 \cup\{\ma
 \end{equation}
 with each \(D_i \subset \R^{n_i}\) nonempty and closed, and with
 \(\mathbf{0}\notin D_i\). \Cref{sec:emptyfix} explains why the origin has to
-be excluded. This problem is equivalent, in
-composite unconstrained form, to
+be excluded. This problem is equivalent to the following composite optimizatio problem:
 \begin{equation}
 \label{P}
 \min _{\x \in \R^n} f(\x)+h(\x),
 \end{equation}
-with
+where
 \begin{equation}
 \label{h}
 h(\x) \coloneqq\lambda\|g(\x)\|_0+\chi_{B \cap C_{l,s}}(\x).
@@ -289,20 +289,19 @@ where each \(D_i\) is the probability simplex on sector \(i\),
 \Delta_{n_i}
 =\bigl\{\z\in\R^{n_i}:\z\ge\mathbf{0},\ \mathbf{1}^\top\z=1\bigr\},
 \]
-so that
-\(B=\prod_{i=1}^m(\Delta_{n_i}\cup\{\mathbf{0}\})\).
-Here \(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns,
-\(\mathbf{C} \in \R^{n \times n}\) is a covariance matrix, and \(\gamma>0\) trades
-off risk against return. An active sector has nonnegative weights that sum
-to one on its own assets and an inactive sector is the origin. An
-upper bound \(s\) caps how many sectors may be used and a positive lower bound \(l\)
-enforces a minimal diversification
-across them, in the same spirit as sparse Markowitz models
-\cite{brodie2009}.
+so that \(B=\prod_{i=1}^m(\Delta_{n_i}\cup\{\mathbf{0}\})\). Here
+\(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns, \(\mathbf{C} \in
+\R^{n \times n}\) is a covariance matrix, and \(\gamma>0\) trades off risk
+against return. An active sector has nonnegative weights that sum to one on its
+own assets, and an inactive sector is represented by the zero subvector. An
+upper bound \(s\) caps how many sectors may be used, and a positive lower bound
+\(l\) enforces a minimal diversification across them, in the same spirit as
+sparse Markowitz models \cite{brodie2009}.
 \end{example}
 
 \begin{example}[cardinality-constrained sparse regression]
 \label{ex:imbuia}
+\todo{I am not sure we can keep this without proper citation.}
 An instance of \eqref{P} with singleton groups is
 \begin{equation}
 \label{regress2}
