@@ -98,48 +98,52 @@ constraints; composite optimization.
 \section{Introduction}
 \label{sec:intro}
 
-Group sparsity comprises optimization problems whose decision variable is
-partitioned into disjoint blocks (groups) that are expected to be predominantly
-zero at desirable solutions. The structure arises whenever explanatory variables
-are highly correlated and must be treated jointly, or when the model itself
-imposes a predetermined grouping~\cite{yuan2006,simon2013,beck2018}. Standard
-applications include portfolio construction, imaging and signal processing,
-total-variation denoising, compressed sensing~\cite{donoho2006}, and low-rank
-approximation. See \cite{beck2018} and the references therein.
+Group sparsity optimization comprises problems whose decision variable is
+partitioned into disjoint blocks (groups), only a few of which are expected to
+be nonzero at desirable solutions. The block structure arises whenever
+explanatory variables are highly correlated and must be treated jointly, or
+when the model itself imposes a predetermined
+grouping~\cite{yuan2006,simon2013,beck2018}. Standard applications include
+portfolio selection, imaging and signal processing, total-variation denoising,
+compressed sensing~\cite{donoho2006}, and low-rank approximation. See
+\cite{beck2018} and the references therein.
 
-The generic proximal mapping of \cite{beck2018} covers a penalty on the number
-of active groups together with an \emph{upper} bound \(s\) on that number. We
-enlarge the class slightly by introducing a \emph{lower} bound \(l\) as well.
-The extra constraint controls the maximal sparsity of a solution and is useful
-whenever a minimum level of diversification is required. This may be the case,
-for example, in portfolio optimization, where one may desire to avoid
+The proximal mapping of a sparsity-inducing regularizer with a hard upper
+bound \( s \) on the number of nonzero groups was fully characterized
+in~\cite{beck2018}. We enlarge the class slightly by introducing a
+\emph{lower} bound \( l \) on the number of nonzero groups as well. The extra
+constraint controls the maximal sparsity of a solution and is useful whenever
+a minimum level of diversification is required. This may be the case, for
+example, in portfolio optimization, where one may desire to avoid
 concentration on too few sectors~\cite{brodie2009,beck2018}. Even when the
 floor is only a target rather than a hard modelling constraint, specifying
-\(l\) is more convenient than tuning \(\lambda\) until the recovered support
-meets a desired minimum size. The constraint enforces the cardinality
-directly, and the grid of candidate penalties can be cut accordingly. 
+\(l\) is more convenient than tuning the regularization parameter until the
+recovered support meets a desired minimum size. The constraint enforces the
+cardinality directly, and the grid of candidate penalty levels can be cut
+accordingly. Moreover, as in~\cite{}, we allow for a weighted sparsity
+penalty, where each group pays a specific price to be nonzero at a solution. 
 
-The penalty itself need not be the same for every group. A vector
-\((\lambda_i)_{i=1}^m\) charges group \(i\) its own price, which a single
-\(\lambda\) cannot express, as one group may be more costly to activate than
-another. \Cref{sec:weights} carries the proximal mapping over to that vector,
-by reading the scalar characterization on the gains shifted by their
-corresponding \(\lambda_i\). The aim of this paper is to present a closed form
-for the proximal mapping of the resulting regularization that can be used as a
-black box inside forward--backward methods~\cite{moreau1962,beckbook}.
+The aim of this paper is to fully characterize the proximal mapping of the
+resulting regularizer and present an efficient algorithm to compute one of its
+elements, so that it can be used as a black box inside forward--backward
+methods~\cite{moreau1962,beckbook}.
 
 \paragraph{Contributions.}
 The main contribution is a full characterization of the proximal mapping of
-this regularization, extending \cite[Theorem~3.2]{beck2018} from a single
-upper-bound to a two-sided interval on the number of active groups. The lower
+this regularizer, extending \cite[Theorem~3.2]{beck2018} from an upper bound
+alone to lower and upper bounds on the number of nonzero groups. The lower
 bound makes the mapping sensitive to whether the origin belongs to the group
-sets. We require each \(D_i\) to exclude the origin; \cref{sec:emptyfix} shows
-that the mapping may be empty otherwise, even for closed group sets. Under
+sets. We require that the origin not be an accumulation point of the
+admissible nonzero values for each group; \cref{sec:emptyfix} shows that the
+mapping may be empty otherwise, even for closed group admissible sets. Under
 that hypothesis we describe every proximal point and give an algorithm that
 computes one. The penalty may depend on the group. \Cref{sec:weights} applies
 the same characterization to the gains after subtracting twice the
 corresponding penalty. Equal penalties are the case in which this shift
-preserves the order of the gains.
+preserves the order of the gains. Finally, we present a numerical example
+using a proximal gradient method to compute a sector portfolio with a lower
+bound on the number of sectors held and compare the results with a portfolio
+computed using a classical Markowitz model with cardinality constraints.
 
 \section{Problem formulation}
 \label{sec:problem}
