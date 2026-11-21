@@ -117,7 +117,7 @@ constraint controls the maximal sparsity of a solution and is useful whenever
 a minimum level of diversification is required. This may be the case, for
 example, in portfolio optimization, where one may desire to avoid
 concentration on too few sectors~\cite{brodie2009,beck2018}. Even when the
-floor is only a target rather than a hard modelling constraint, specifying
+floor is only a target rather than a hard modeling constraint, specifying
 \(l\) is more convenient than tuning the regularization parameter until the
 recovered support meets a desired minimum size. The constraint enforces the
 cardinality directly, and the grid of candidate penalty levels can be cut
@@ -222,7 +222,7 @@ The proximal mapping of \(h\)
 was fully characterized in \cite{beck2018} for \(l=0\). \Cref{thm:proxh} below
 extends that characterization to \(0<l\leq s\).
 
-\section{Origin exclusion and modelling}
+\section{Origin exclusion and modeling}
 \label{sec:emptyfix}
 In the definition of $B$, the set of admissible values for each block, we
 assumed that for \( i = 1, \ldots, m,\ D_i\) is closed, whenever \( l > 0 \). This
@@ -331,7 +331,7 @@ nonzero has an actual, physical meaning.
 
 The portfolio of \cref{ex:carteira} is a natural example, as
 \(D_i=\Delta_{n_i}\) is closed, so every sector can be turned on and
-\(\prox_h\) is nonempty. A different modelling issue remains. A point of
+\(\prox_h\) is nonempty. A different modeling issue remains. A point of
 \(\Delta_{n_i}\) may still put an arbitrarily small weight on some assets. We
 may want to avoid this by defining a minimum weight that an asset in an active
 group should carry if it is selected at all. For instance, for minimum weight
@@ -416,9 +416,13 @@ P_C(\x)\coloneqq \prox_{\chi_C}(\x)=\argmin_{\y\in C}\|\y-\x\|_2,
 $$
 and the distance to \(D_i\) is
 $$
-d_{D_i}\left(\x_{G_i}\right)\coloneqq\min _{\z \in D_i}\left\|\x_{G_i}-\z\right\|_2\quad \forall i=1,2, \ldots, m .
+d_{D_i}\left(\x_{G_i}\right)\coloneqq\inf _{\z \in D_i}\left\|\x_{G_i}-\z\right\|_2\quad \forall i=1,2, \ldots, m .
 $$
-The latter is well defined because each \(D_i\) is closed. The gain map
+If \(D_i\) is closed, which is always the case when \(l>0\), the infimum is
+attained. When \(l=0\), we only assume that \(D_i\cup\{\vz\}\) is closed, and
+the infimum may not be attained. This happens only when \(\vz\) is the unique
+nearest point of \(\x_{G_i}\) in \(D_i\cup\{\vz\}\), and then
+\(P_{D_i}(\x_{G_i})=\emptyset\) and \(d_{D_i}(\x_{G_i})=\|\x_{G_i}\|_2\). The gain map
 \(\omega: \R^n \to \R^m\),
 \begin{equation}
 \label{omega}
@@ -428,8 +432,8 @@ governs which groups are activated by \(\prox_h\).
 
 The support of a vector (its set of active-group indices) is
 $$I_1(\x)\coloneqq\left\{i \in\{1,2, \ldots, m\}\mid g(\x)_i=1\right\}.$$
-Since \(\mathbf{0}\notin D_i\), a nearest point of a block in \(D_i\) is never
-the origin, so every group can be activated.
+Since \(\mathbf{0}\notin D_i\), a nearest point of a block in \(D_i\), when it
+exists, is never the origin. If \(l>0\), it always exists, so every group can be activated.
 Level sets of the gain are written
 $$I_{a}^{\stackrel{?}{=}}(\x)\coloneqq\left\{i\in\{1,2,\ldots,m\}\mid \omega(\x)_i\stackrel{?}{=}a\right\},$$
 where \(\stackrel{?}{=}\) stands for an arbitrary relation, and \(a\in\R\) may
@@ -514,7 +518,9 @@ detail for each case). Therefore, since \(\y \in \prox_h(\x)\)
 \end{equation}
 Plainly, \(\y_{G_i} \in P_{D_i}\left(\x_{G_i}\right)\) \(\forall i \in I_1(\y)\)
 (otherwise a better solution of the problem defining
-\(\prox_h(\x)\) could be obtained with the same active groups)
+\(\prox_h(\x)\) could be obtained with the same active groups or, when
+\(P_{D_i}(\x_{G_i})=\emptyset\), which may only happen if \(l=0\), by switching
+group \(i\) off)
 and, by hypothesis, \(\U_i \in P_{D_i}\left(\x_{G_i}\right)\ \forall i \in I_1(\U)\).
 Hence, by \Cref{lem:toomega}, \eqref{proxy} is the same as
 $$
@@ -530,7 +536,11 @@ which in turn is equivalent to
 \end{equation}
 
 We first treat the first case of (b). The case \(l=0\) is
-\cite[Theorem~3.2]{beck2018}. If \(l\geq 1\), \eqref{T1} indeed yields
+\cite[Theorem~3.2]{beck2018}, applied to the closures \(\overline{D_i}\) of the
+sets \(D_i\). As \(\overline{D_i}\subset D_i\cup\{\vz\}\), they define the same
+set \(B\) and the same distances \(d_{D_i}\), and
+\(P_{\overline{D_i}}(\x_{G_i})\setminus\{\vz\}=P_{D_i}(\x_{G_i})\), so
+conditions (a) and (b) are unchanged. If \(l\geq 1\), \eqref{T1} indeed yields
 \(l\leq |I_1(\U)|\leq s\), since \(|T \cap I_{2\lambda}^>(\x)|\geq l\)
 because \(\omega(\x)_{[l]}> 2\lambda\), and \(|T|=s\) by \eqref{defS}.
 
@@ -1243,8 +1253,8 @@ cardinality bound to a genuine window \(l\le\|g(\x)\|_0\le s\). The lower
 bound changes the geometry of \(\prox_h\): when
 \(\omega(\x)_{[l]}\le 2\lambda\) one must activate zero-gain (or even
 negative-gain) groups in order to meet the quota \(l\). That phenomenon is
-invisible when \(l=0\). Because each \(D_i\) excludes the origin, the mapping
-itself is nonempty at every centre.
+invisible when \(l=0\). By \Cref{prop:nonemptyprox}, the mapping itself is
+nonempty at every center.
 
 The resulting oracle is the proximal step of the spectral method in
 \cref{sec:numerics}.
