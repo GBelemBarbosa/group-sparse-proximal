@@ -160,7 +160,7 @@ For \(\x\in\R^n\) and \(T\subset \{1,\ldots,n\}\), write \(\x_T\) for the
 subvector of \(\x\) indexed by \(T\). The map \(g: \R^n \to\{0,1\}^m\)
 indicates nonzero groups, that is,
 $$
-g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \mathbf{0}, \\
+g(\x)_i\coloneqq \begin{cases}1, & \x_{G_i} \neq \vz, \\
 0, & \text{otherwise.}\end{cases}
 $$
 Whenever \(g(\x)_i=1\), the group \(G_i\) is called \emph{active} for \(\x\).
@@ -186,13 +186,13 @@ where \(\lambda \geq 0\) is a penalty parameter, \(f: \R^n \to \R\) is
 continuously differentiable and bounded from below, and
 \begin{equation}
 \label{B}
-B \coloneqq \prod_{i=1}^m\left(D_i \cup\{\mathbf{0}\}\right) =
-\left(D_1 \cup\{\mathbf{0}\}\right) \times\left(D_2 \cup\{\mathbf{0}\}\right) 
-\times \cdots \times\left(D_m \cup\{\mathbf{0}\}\right),
+B \coloneqq \prod_{i=1}^m\left(D_i \cup\{\vz\}\right) =
+\left(D_1 \cup\{\vz\}\right) \times\left(D_2 \cup\{\vz\}\right) 
+\times \cdots \times\left(D_m \cup\{\vz\}\right),
 \end{equation}
-where each \( D_i \subset \R^{n_i} \setminus \{ \mathbf{0} \} \) is a nonempty
+where each \( D_i \subset \R^{n_i} \setminus \{ \vz \} \) is a nonempty
 set of admissible nonzero values for group \( G_i \). If \( l = 0 \) we assume
-that each \( D_i \cup \{ \mathbf{0} \} \) is closed. As for \( l > 0 \), we
+that each \( D_i \cup \{ \vz \} \) is closed. As for \( l > 0 \), we
 need the stronger assumption that \( D_i \) is closed. We defer to
 \Cref{sec:emptyfix} the discussion on why such specific closedness assumptions
 are needed. This problem is equivalent to the following composite optimization
@@ -222,12 +222,56 @@ The proximal mapping of \(h\)
 was fully characterized in \cite{beck2018} for \(l=0\). \Cref{thm:proxh} below
 extends that characterization to \(0<l\leq s\).
 
-\section{Origin exclusion and modeling}
+\section{Closedness assumptions and origin exclusion}
 \label{sec:emptyfix}
-In the definition of $B$, the set of admissible values for each block, we
-assumed that for \( i = 1, \ldots, m,\ D_i\) is closed, whenever \( l > 0 \). This
-is actually equivalent to the closedness of the feasible set of~\eqref{P0}, a
-natural assumption in optimization.
+
+In the definition of $B$, appearing in the description of the feasible set
+of~\eqref{P0}, we considered different closedness assumptions depending on
+whether $l = 0$ or $l > 0$. The need for such closedness assumptions can be
+made clear by showing that they are equivalent to the closedness of the
+feasible set of~\eqref{P0}, a natural assumption in optimization. 
+
+In fact, let us start with the case \( l = 0 \), considered initially by Beck
+and Hallak in~\cite{beck2018}. In their discussion the sets \( D_i,\ i = 1,
+\ldots, m, \) could contain the origin and were supposed to be closed. In this
+text, we excluded \( \vz \) from \( D_i \) and assumed that \(D_i \cup \{ \vz
+\} \) is closed. Hence, Beck and Hallak's assumptions imply the one used in
+this work.
+
+\begin{proposition}
+    For \( 0 = l \leq 1 \leq s \leq m \), the set \( C_{0, s} \cap B \) is
+    closed if, and only if, the sets \( D_i \cup \{ \vz \},\ i = 1, \ldots, m,
+    \) are closed.
+\end{proposition}
+
+\begin{proof}
+First, note that \( C_{0, s} \) is a closed set. In fact, it is the finite
+union of the subspaces \( \{ \x_{G_i} = \vz,\ i \not\in I \} \) for \( I \)
+with cardinality at most \( s \).  Moreover, remember that \( B = \prod_{i =
+1}^m ( D_i \cup \{ \vz \} ) \) and the assumption that each factor of the
+Cartesian product is closed is equivalent to the closedness of \( B \). It
+follows directly that the closedness of the factors implies the closedness of
+\( C_{0, s} \cap B \).  We are ready to consider the converse implication.
+
+Assume that \( C_{0, s} \cap B \) is closed. For a given \( i = 1, \ldots, m
+\), let \( \{ \x^k_{G_i} \} \) be a sequence in \( D_i \cup \{ \vz \} \)
+converging to \( \x_{G_i} \). We need to show that \( \x_{G_i} \in D_i \cup \{
+\vz \} \). With this aim, extend each \( \x^k_{G_i} \) to \( \x^k \in \R^n \)
+by defining the values in the other groups as \( \vz \). This sequence clearly
+converges to a point, \( \x \in \R^n \), that has \( \x_{G_i} \) in group \( i
+\) and \( \vz \) otherwise. Clearly, \(\x^k \in B \) and, as $s \geq 1$, \(
+\x^k \) also belongs to \( C_{0, s} \). Therefore, \( \x \in C_{0, s} \cap B
+\). Hence, \( \x_{G_i} \in D_i \cup \{ \vz \} \) as required.
+\end{proof}
+
+The proposition above does not cover the case $0 = l = s$. In this case, the
+feasible set collapses to the origin, and all problems treated in this paper
+become trivial. 
+
+As for the case \( l > 0 \), the assumption is that each \( D_i,\ i = 1,
+\ldots, m, \) does not contain the origin and is closed. Again, this is
+equivalent to the closedness of the feasible set of~\eqref{P0}, as shown
+below.
 
 \begin{proposition} For any \( l > 0 \), the set \( C_{l, s} \cap B \) is
 closed if, and only if, the sets \( D_i,\ i = 1, \ldots, m \) are closed.
@@ -241,33 +285,27 @@ closed if, and only if, the sets \( D_i,\ i = 1, \ldots, m \) are closed.
     setting 
     \begin{align*}
         \x_{G_i}^k & \text{ is a fixed point in } D_i,\ i = 2, \ldots, l, \\
-        \x_{G_i}^k &= 0,\ i = l + 1, \ldots, m.
+        \x_{G_i}^k &= \vz,\ i = l + 1, \ldots, m.
     \end{align*}
-    Note that \( \x^k \) has \( l \) active groups. Now, if $\x_{G_1} = 0$,
+    Note that \( \x^k \) has \( l \) active groups. Now, if $\x_{G_1} = \vz$,
     then \( \x \) will have \( l - 1 \) active groups and then will not belong
-    to \( C_{l, s} \).  If \( \x_{G_1} \neq 0 \), then \( \x_{G_1} \not\in D_1
-    \cup \{ \mathbf{0} \} \). In both cases, \( \x \not\in C_{l, s} \cap B \),
-    which is a contradiction. Hence, all the sets \( D_i,\ i = 1, \ldots, m \)
-    are closed.
+    to \( C_{l, s} \).  If \( \x_{G_1} \neq \vz \), then \( \x_{G_1} \not\in
+    D_1 \cup \{ \vz \} \). In both cases, \( \x \not\in C_{l, s} \cap B
+    \), which is a contradiction. Hence, all the sets \( D_i,\ i = 1, \ldots,
+    m \) are closed.
 
     Now, the converse implication. Assume that the sets \( D_i,\ i = 1,
     \ldots, m \) are closed. Let \( \{ \x^k \} \) be a sequence in $C_{l, s}
     \cap B$ converging to \( \x \). By restricting to a subsequence, we may
     assume without loss of generality that the active groups of all \( \x^k \)
     are precisely the first \(a,\ l \leq a \leq s \). Hence, for all $i = a +
-    1, \ldots, m$ and all k, \( 0 = x^k_{G_i} \rightarrow \x_{G_i} \). It
-    follows that \( \x_{G_i} = 0 \). Moreover, for $i = 1, \ldots, a$, as \(
-    D_i \ni \x^k_{G_i} \rightarrow \x_{G_i} \), and \( D_i \) is closed, \(
-    \x_{G_i} \in D_i \not\ni \mathbf{0} \). Hence, \( x_{G_i} \neq \mathbf{0}
-    \). That is, \( \x \) has the same sparsity pattern as \( x^k \) and then
+    1, \ldots, m$ and all \( k \), \( \vz = \x^k_{G_i} \rightarrow \x_{G_i}
+    \). It follows that \( \x_{G_i} = \vz \). Moreover, for $i = 1, \ldots,
+    a$, as \( D_i \ni \x^k_{G_i} \rightarrow \x_{G_i} \), and \( D_i \) is
+    closed, \( \x_{G_i} \in D_i \not\ni \vz \). Hence, \( \x_{G_i} \neq \vz
+    \). That is, \( \x \) has the same sparsity pattern as \( \x^k \) and then
     belongs to $C_{l, s} \cap B$.
 \end{proof}
-
-The case \( l = 0 \) assumes the closedness of \( D_i \cup \{ \vz \}, \ i = 1,
-\ldots, m \). This ensures trivially that $B$ is closed. As for the set $C_{0,
-s}$, it is also a closed set. In fact, it is the finite union of the subspaces
-\( \{ \x_{G_i} = 0,\ i \not\in I \} \) for \( I \) with cardinality at most \(
-s \). Hence, $C_{0, s} \cap B$, the feasible set of~\eqref{P0}, is closed.  
 
 A direct implication of such closedness is the nonemptiness of the proximal
 mapping defined in~\eqref{prox}.
@@ -313,11 +351,11 @@ accumulation point. The feasible block \((t)\) shrinks toward the origin,
 which is the inactive state of the first group, and the infimum of the
 proximal objective is not attained. 
 
-If instead each \(D_i\) is closed, the distance from \(\mathbf{0}\) to \(D_i\)
+If instead each \(D_i\) is closed, the distance from \(\vz\) to \(D_i\)
 is positive, as \( \vz \not\in D_i \). The origin of group \(i\) is then
 feasible only by switching the group off, through the factor
-\(\{\mathbf{0}\}\) in \(B\). A nearest point of \(\x_{G_i}\) in \(D_i\) exists
-and is never \(\mathbf{0}\), so every group can be turned on properly. 
+\(\{\vz\}\) in \(B\). A nearest point of \(\x_{G_i}\) in \(D_i\) exists
+and is never \(\vz\), so every group can be turned on properly. 
 
 Finally, for the case $l > 0$, the closedness assumption ensures that \( \vz
 \) is not an accumulation point of the sets $D_i,\ i = 1, \ldots, m$, of
@@ -361,10 +399,10 @@ the number of sectors that may receive capital,
 where each \(D_i\) is the probability simplex on sector \(i\),
 \[
 \Delta_{n_i}
-=\bigl\{\z\in\R^{n_i}:\z\ge\mathbf{0},\ \mathbf{1}^\top\z=1\bigr\},
+=\bigl\{\z\in\R^{n_i}:\z\ge\vz,\ \mathbf{1}^\top\z=1\bigr\},
 \]
 so that
-\(B=\prod_{i=1}^m(\Delta_{n_i}\cup\{\mathbf{0}\})\).
+\(B=\prod_{i=1}^m(\Delta_{n_i}\cup\{\vz\})\).
 Here \(\boldsymbol{\mu} \in \R^n\) is a vector of expected returns,
 \(\mathbf{C} \in \R^{n \times n}\) is a covariance matrix, and \(\gamma>0\) trades
 off risk against return. An active sector has nonnegative weights that sum
@@ -432,7 +470,7 @@ governs which groups are activated by \(\prox_h\).
 
 The support of a vector (its set of active-group indices) is
 $$I_1(\x)\coloneqq\left\{i \in\{1,2, \ldots, m\}\mid g(\x)_i=1\right\}.$$
-Since \(\mathbf{0}\notin D_i\), a nearest point of a block in \(D_i\), when it
+Since \(\vz\notin D_i\), a nearest point of a block in \(D_i\), when it
 exists, is never the origin. If \(l>0\), it always exists, so every group can be activated.
 Level sets of the gain are written
 $$I_{a}^{\stackrel{?}{=}}(\x)\coloneqq\left\{i\in\{1,2,\ldots,m\}\mid \omega(\x)_i\stackrel{?}{=}a\right\},$$
@@ -460,7 +498,7 @@ $$
 { \{ \mathbf { 0 } \} , } & { i \notin T  }
 \end{array}, \quad \y _ { G _ { i } } \in \left\{\begin{array}{ll}
 P_{D_i}\left(\x_{G_i}\right), & i \in S \\
-\{\mathbf{0}\}, & i \notin S
+\{\vz\}, & i \notin S
 \end{array}\right.\right.,
 $$
 one has
@@ -1101,12 +1139,12 @@ the training sample covariance, with a ridge
 \(\mathbf{C}\) is positive definite.
 
 In the sector model each \(D_i\) is the simplex of sector \(i\) or the coordinatewise cutted version \(D_i^t\) when \(t>0\) (\cref{sec:emptyfix}), and
-\(B=\prod_i(D_i\cup\{\mathbf{0}\})\). An active sector sums to one on its own
+\(B=\prod_i(D_i\cup\{\vz\})\). An active sector sums to one on its own
 names and an inactive sector is the origin. The upper bound is \(s=11\) for all cases. The
 runs use \(t\in\{0,0.05\}\) and, for \(\lambda>0\), \(l\in\{1,3,5\}\). The
 case \(\lambda=0\) is solved once for each \(t\) with \(l=0\), as it usually results in solutions that don't hit the lower bound anyway. The Markowitz
 model is the long-only simplex
-\(\{\x\ge\mathbf{0}:\mathbf{1}^\top\x=1\}\) with \(\|\x\|_0\le k\) for
+\(\{\x\ge\vz:\mathbf{1}^\top\x=1\}\) with \(\|\x\|_0\le k\) for
 \(k\in\{1,5,10,20,40,80,492\}\). On that simplex an \(\ell_1\) penalty is
 constant, so the cap is the sparsity control \cite{brodie2009}.
 
@@ -1131,7 +1169,7 @@ the two largest \(\lambda\) returned the same portfolio, and those pairs are one
 Both models are solved by a nonmonotone GLL spectral proximal-gradient iteration
 in the spirit of \cite{kanzow2022}, starting from the equal-weight book. For the
 capped simplex the step is the Euclidean projection onto
-\(\{\x\ge\mathbf{0}:\mathbf{1}^\top\x=1,\ \|\x\|_0\le k\}\), starting from
+\(\{\x\ge\vz:\mathbf{1}^\top\x=1,\ \|\x\|_0\le k\}\), starting from
 equal weights on the \(k\) names of largest training mean. The case \(k=1\)
 compares \eqref{eq:mv} at the \(n\) vertices, because a projected step that
 begins at one vertex does not reach another.
