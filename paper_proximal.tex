@@ -48,6 +48,7 @@
 \theoremstyle{remark}
 \newtheorem{remark}{Remark}
 
+\newcommand*{\vz}{\mathbf{0}}
 \newcommand*\R{\mathbb{R}}
 \newcommand*\N{\mathbb{N}}
 \newcommand*\x{\mathbf{x}}
@@ -189,9 +190,12 @@ B \coloneqq \prod_{i=1}^m\left(D_i \cup\{\mathbf{0}\}\right) =
 \left(D_1 \cup\{\mathbf{0}\}\right) \times\left(D_2 \cup\{\mathbf{0}\}\right) 
 \times \cdots \times\left(D_m \cup\{\mathbf{0}\}\right),
 \end{equation}
-with each \(D_i \subset \R^{n_i}\) nonempty and closed, and with
-\(\mathbf{0}\notin D_i\). \Cref{sec:emptyfix} explains why the origin has to
-be excluded. This problem is equivalent to the following composite optimization
+where each \( D_i \subset \R^{n_i} \setminus \{ \mathbf{0} \} \) is a nonempty
+set of admissible nonzero values for group \( G_i \). If \( l = 0 \) we assume
+that each \( D_i \cup \{ \mathbf{0} \} \) is closed. As for \( l > 0 \), we
+need the stronger assumption that \( D_i \) is closed. We defer to
+\Cref{sec:emptyfix} the discussion on why such specific closedness assumptions
+are needed. This problem is equivalent to the following composite optimization
 problem:
 \begin{equation}
 \label{P}
@@ -220,16 +224,82 @@ extends that characterization to \(0<l\leq s\).
 
 \section{Origin exclusion and modelling}
 \label{sec:emptyfix}
+In the definition of $B$, the set of admissible values for each block, we
+assumed that for \( i = 1, \ldots, m,\ D_i\) is closed, whenever \( l > 0 \). This
+is actually equivalent to the closedness of the feasible set of~\eqref{P0}, a
+natural assumption in optimization.
 
-The hypothesis \(\mathbf{0}\notin D_i\) is part of the model, not an optional
-regularization. If some \(D_i\) contains the origin, \(\prox_h\) may be empty
-even though every \(D_i\) is closed.
+\begin{proposition} For any \( l > 0 \), the set \( C_{l, s} \cap B \) is
+closed if, and only if, the sets \( D_i,\ i = 1, \ldots, m \) are closed.
+\end{proposition}
+\begin{proof}
+    Let us assume that \( C_{l , s} \cap B \) is closed. Suppose, by
+    contradiction, that \( D_1 \) is not closed, where the first index is used
+    without loss of generality. Therefore, there exists a sequence \( \{
+    \x^k_{G_1} \} \) in \( D_1 \) converging to \( \x_{G_1} \not\in D_1 \).
+    Extend this sequence to a sequence \( \{ \x^k \} \) in \( \R^n \) by
+    setting 
+    \begin{align*}
+        \x_{G_i}^k & \text{ is a fixed point in } D_i,\ i = 2, \ldots, l, \\
+        \x_{G_i}^k &= 0,\ i = l + 1, \ldots, m.
+    \end{align*}
+    Note that \( \x^k \) has \( l \) active groups. Now, if $\x_{G_1} = 0$,
+    then \( \x \) will have \( l - 1 \) active groups and then will not belong
+    to \( C_{l, s} \).  If \( \x_{G_1} \neq 0 \), then \( \x_{G_1} \not\in D_1
+    \cup \{ \mathbf{0} \} \). In both cases, \( \x \not\in C_{l, s} \cap B \),
+    which is a contradiction. Hence, all the sets \( D_i,\ i = 1, \ldots, m \)
+    are closed.
+
+    Now, the converse implication. Assume that the sets \( D_i,\ i = 1,
+    \ldots, m \) are closed. Let \( \{ \x^k \} \) be a sequence in $C_{l, s}
+    \cap B$ converging to \( \x \). By restricting to a subsequence, we may
+    assume without loss of generality that the active groups of all \( \x^k \)
+    are precisely the first \(a,\ l \leq a \leq s \). Hence, for all $i = a +
+    1, \ldots, m$ and all k, \( 0 = x^k_{G_i} \rightarrow \x_{G_i} \). It
+    follows that \( \x_{G_i} = 0 \). Moreover, for $i = 1, \ldots, a$, as \(
+    D_i \ni \x^k_{G_i} \rightarrow \x_{G_i} \), and \( D_i \) is closed, \(
+    \x_{G_i} \in D_i \not\ni \mathbf{0} \). Hence, \( x_{G_i} \neq \mathbf{0}
+    \). That is, \( \x \) has the same sparsity pattern as \( x^k \) and then
+    belongs to $C_{l, s} \cap B$.
+\end{proof}
+
+The case \( l = 0 \) assumes the closedness of \( D_i \cup \{ \vz \}, \ i = 1,
+\ldots, m \). This ensures trivially that $B$ is closed. As for the set $C_{0,
+s}$, it is also a closed set. In fact, it is the finite union of the subspaces
+\( \{ \x_{G_i} = 0,\ i \not\in I \} \) for \( I \) with cardinality at most \(
+s \). Hence, $C_{0, s} \cap B$, the feasible set of~\eqref{P0}, is closed.  
+
+A direct implication of such closedness is the nonemptiness of the proximal
+mapping defined in~\eqref{prox}.
+\begin{proposition}
+    \label{prop:nonemptyprox}
+    The proximal mapping of $h$, defined in~\eqref{prox}, is nonempty.
+\end{proposition}
+\begin{proof}
+    The proximal definition is equivalent to
+    \[
+    \min_{\y \in C_{l, s} \cap B} \lambda \| g(\y) \|_0 + 
+    \frac{1}{2} \| \y - \x \|^2.
+    \]
+    We already know that the feasible set is closed. It is also nonempty, as
+    the sets \(D_i,\ i = 1, \ldots, m,\) are nonempty, and  $\vz$ can be used
+    in any group. It is also easy to show that the term $\| g(\cdot) \|_0$ is
+    lower semicontinuous, as it can only decrease at limits when nonzero
+    groups converge to \( \vz \). Furthermore, it is also bounded below by 0.
+    The other term in the objective is clearly continuous and coercive. Hence,
+    the objective is lower semicontinuous and coercive, attaining a minimum on
+    nonempty closed sets. 
+\end{proof}
+
+On the other hand, without such closedness assumptions, optimization problems
+over such a feasible set may have empty solution sets. In particular, the
+proximal mapping may be empty, as shown in the example below.
 
 \begin{example}[empty proximal mapping]
 \label{ex:counter}
-Let \(m=1\), with scalar group \(D_1=[0,+\infty)\), and take
-\(l=s=1\). At \(\z=(0)\), the point \((t)\) with \(t>0\) lies in \(B\cap C_{l,s}\) and
-the objective of \eqref{prox} equals
+Let \(m=1\), with scalar group \(D_1=(0,+\infty)\), and take \(l=s=1\). At
+\(\z=(0)\), the point \((t)\) with \(t>0\) lies in \(B\cap C_{l,s}\) and the
+objective of \eqref{prox} equals
 \[
 \lambda+\frac12 t^2.
 \]
@@ -238,47 +308,41 @@ it is not attained. The limit is the origin, which has no active group, so it
 lies outside \(C_{l,s}\). Hence the proximal mapping at the origin is empty.
 \end{example}
 
-What fails is that \(\mathbf{0}\in D_1\). The feasible block \((t)\) shrink
-toward the origin, which is the inactive state of the first group, and the
-infimum of the proximal objective is not attained. 
+What fails is \( D_1 \) not being closed, allowing \( 0 \) to be an
+accumulation point. The feasible block \((t)\) shrinks toward the origin,
+which is the inactive state of the first group, and the infimum of the
+proximal objective is not attained. 
 
-If instead each \(D_i\) is closed and excludes the origin, the distance from
-\(\mathbf{0}\) to \(D_i\) is positive. The origin of group \(i\) is then
-feasible only by switching the group off, through the factor \(\{\mathbf{0}\}\)
-in \(B\). A nearest point of \(\x_{G_i}\) in \(D_i\) exists and is never
-\(\mathbf{0}\), so every group can be turned on properly. For each admissible support
-the nearest-point problem on the corresponding product of sets \(D_i\) attains
-its minimum, the resulting blocks are nonzero, and \(h\) depends on the point
-only through which groups are active. There are finitely many supports of
-size between \(l\) and \(s\), so the minimum in \eqref{prox} is attained and
-\(\prox_h(\x)\) is nonempty at every \(\x\).
+If instead each \(D_i\) is closed, the distance from \(\mathbf{0}\) to \(D_i\)
+is positive, as \( \vz \not\in D_i \). The origin of group \(i\) is then
+feasible only by switching the group off, through the factor
+\(\{\mathbf{0}\}\) in \(B\). A nearest point of \(\x_{G_i}\) in \(D_i\) exists
+and is never \(\mathbf{0}\), so every group can be turned on properly. 
 
-A direct way to enforce the exclusion is to cut from each \(D_i\) the open
-ball of radius \(\delta_i>0\) about the origin, in the Euclidean or
-\(\ell_\infty\) norm,
-\[
-D_i^{\delta}\coloneqq D_i\setminus\bigl\{\z\in\R^{n_i}:\|\z\|<\delta_i\bigr\}.
-\]
-If \(\delta_i\) is small enough that \(D_i\) is not swallowed by the
-ball, then \(D_i^{\delta}\) is closed and does not contain the origin.
-The origin remains available through \(B\), so a group can still be switched
-off, and an active group must leave the ball. The chosen radius should be a
-meaningful scale of the model rather than a machine epsilon (see 
-\autoref{sec:numerics} for further discussions).
+Finally, for the case $l > 0$, the closedness assumption ensures that \( \vz
+\) is not an accumulation point of the sets $D_i,\ i = 1, \ldots, m$, of
+admissible nonzero values. This is rather natural; otherwise, an infeasible
+point that does not satisfy the lower cardinality constraint could be
+approached by points that satisfy it, but with arbitrarily small values. This
+would not look natural in a real application that has lower cardinality
+constraints. If one requires a minimum number of active groups, it is quite
+natural that such groups should not be allowed to be arbitrarily small so that
+nonzero has an actual, physical meaning.
 
-The portfolio of \cref{ex:carteira} is already on the safe side of that
-geometry as \(D_i=\Delta_{n_i}\) does not contain the origin, so every sector
-can be turned on and \(\prox_h\) is nonempty. A different modelling issue remains.
-A point of \(\Delta_{n_i}\) may still put an arbitrarily small weight on
-some assets. In the same spirit as the hole about the origin, one may cut
-each coordinate out of the open interval \((0,t)\), for instance \(t=0.05\):
+The portfolio of \cref{ex:carteira} is a natural example, as
+\(D_i=\Delta_{n_i}\) is closed, so every sector can be turned on and
+\(\prox_h\) is nonempty. A different modelling issue remains. A point of
+\(\Delta_{n_i}\) may still put an arbitrarily small weight on some assets. We
+may want to avoid this by defining a minimum weight that an asset in an active
+group should carry if it is selected at all. For instance, for minimum weight
+$t$, we may define
 \[
 D_i^{t}
-=\Delta_{n_i}\setminus\bigcup_{k=1}^{n_i}\bigl\{\z\in\R^{n_i}:\z_k\in(0,t)\bigr\}
-=\bigl\{\z\in\Delta_{n_i}:\z_k\notin(0,t)\text{ for all }k\bigr\}.
+=\Delta_{n_i}\setminus\bigcup_{j=1}^{n_i}\bigl\{\z\in\R^{n_i}:\z_j\in(0,t)\bigr\}
+=\bigl\{\z\in\Delta_{n_i}:\z_j\notin(0,t),\text{ for all }j\bigr\}.
 \]
-Note that \(D_i^{t}\) is still closed. The origin remains again available by switching the
-whole group off through \(B\).
+Note that \(D_i^{t}\) is still closed. The origin remains again available by
+switching the whole group off through \(B\).
 
 \section{Motivating examples}
 \label{sec:examples}
@@ -435,7 +499,7 @@ T\cup \{i\}\subset I_1(\U)\subset T\cup\{i\}\cup U.
 \end{enumerate}
 \end{theorem}
 \begin{proof}
-Nonemptiness is the argument of \cref{sec:emptyfix}.
+Nonemptiness follows from \Cref{prop:nonemptyprox}.
 Suppose that \(\U\) satisfies (a) and (b), and let
 \(\y \in \prox_{h}(\x)\).
 We will show that \(\U \in \prox_h(\x)\) and that \(\y\)
@@ -869,10 +933,11 @@ translates the description of \(\mathcal{T}(\x)\) in \Cref{sec:closed}.
 \end{proposition}
 
 \begin{proof}
-Nonemptiness is the argument of \Cref{sec:emptyfix}. It uses
-\(\mathbf{0}\notin D_i\) and does not depend on the penalties. Let \(\U\) and
-\(\y\) satisfy condition~(a) of \Cref{thm:proxh}, and write \(I\coloneqq I_1(\U)\)
-and \(J\coloneqq I_1(\y)\). \Cref{lem:toomega} gives
+Nonemptiness follows from a direct generalization of \Cref{prop:nonemptyprox},
+since \(\sum_{i=1}^m \lambda_i g(\cdot)_i\) is also lower semicontinuous and
+bounded below by \(0\), as each \(g(\cdot)_i\) is and \(\lambda_i \geq 0\).
+Let \(\U\) and \(\y\) satisfy condition~(a) of \Cref{thm:proxh}, and write
+\(I\coloneqq I_1(\U)\) and \(J\coloneqq I_1(\y)\). \Cref{lem:toomega} gives
 \[
 \|\U-\x\|_2^2-\|\y-\x\|_2^2=\sum_{i\in J}\omega(\x)_i-\sum_{i\in I}\omega(\x)_i.
 \]
