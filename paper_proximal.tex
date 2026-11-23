@@ -333,17 +333,21 @@ The origin remains again available by switching the whole group off through \(B\
 \end{example}
 
 \begin{example}[cardinality-constrained sparse regression]
-  \label{ex:imbuia}
-  \todo{I am not sure we can keep this without proper citation.}
+  \label{ex:sparsereg}
   An instance of \eqref{P} with singleton groups is
   \begin{equation}
     \label{regress2}
     \min_{\x\in\R^n}\frac{1}{2}\|\A\x-\bv\|^2+\lambda\|\x\|_0+\chi_{C_{l,s}}(\x),
   \end{equation}
-  with \(\A\in \R^{m\times n}\) and \(\bv\in \R^m\), and \(\chi\) being the set
-  indicator function.
-  The formulation was motivated by infrared spectroscopy on the IMBUI Abeamline (SIRIUS/LNLS), where a sparse spectrogram is recovered from measurements.
-  If a prior estimate of the number of spectral lines is available --- from previous experiments or from the literature --- it can be encoded as the lower bound \(l\), so that the \(\ell_0\) penalty is not free to discard known structure.
+  where \(\A\in \R^{p \times n}\), \(\bv\in \R^p\).  
+  This is a small variation of the classical subset of regression variables~\cite{miller1984} where we consider jointly the $\ell_0$ penalty and two-sided cardinality constraints.
+  The problem is NP-hard~\cite{natarajan1995} and is typically tackled using convex approximation, as in LASSO~\cite{tibshirani1996}.
+  Proximal gradient approaches appear in~\cite{blumensath2008,beck2018} and direct mixed-integer optimization formulations can be found in~\cite{bertsimas2016}.
+  A novelty in the model above is the presence of the lower cardinality constraint, which may introduce a priori information into the model, alleviating the need for fine-tuning the penalty parameter $\lambda$.
+  Technically, to make this model fit~\eqref{P0}, it is necessary to add a prohibited open interval containing \( 0 \) on the active variables whenever \( l > 0 \). See the discussion in~\Cref{sec:emptyfix}.
+
+%   The formulation was motivated by infrared spectroscopy on the IMBUI Abeamline (SIRIUS/LNLS), where a sparse spectrogram is recovered from measurements.
+%   If a prior estimate of the number of spectral lines is available --- from previous experiments or from the literature --- it can be encoded as the lower bound \(l\), so that the \(\ell_0\) penalty is not free to discard known structure.
 \end{example}
 
 \section{Notation}
@@ -584,7 +588,7 @@ The argument follows \cite[Theorem~3.2]{beck2018} closely: the same comparison o
     |I_1(\U) \cap I_{2\lambda}^>(\x)|+|I_1(\y) \cap I_{2\lambda}^\leq(\x)|
      & \geq|I_1(\y) \cap I_{2\lambda}^>(\x)|+|I_1(\y) \cap I_{2\lambda}^\leq(\x)| \eqjust{greaterind} \\
      & =|I_1(\y)|
-    \\  & \geq |I_1(\U)|
+    \\   & \geq |I_1(\U)|
     \\&=|I_1(\U) \cap I_{2\lambda}^>(\x)|+|I_1(\U)\cap I_{2\lambda}^\leq(\x)\cap I_{[l]}^\geq(\x)| ,
   \end{align*}
   or equivalently,
