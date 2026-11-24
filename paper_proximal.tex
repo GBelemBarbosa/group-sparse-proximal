@@ -198,6 +198,7 @@ In fact, let us start with the case \( l = 0 \), considered initially by Beck an
 In their discussion the sets \( D_i,\ i = 1, \ldots, m, \) could contain the origin and were supposed to be closed.
 In this text, we excluded \( \vz \) from \( D_i \) and assumed that \(D_i \cup \{ \vz \} \) is closed.
 Hence, Beck and Hallak's assumptions imply the one used in this work.
+This is not a meaningful change in the scope of sets allowed, as it is always possible to replace \( D_i \) by \( D_i \cup \{ \vz \} \) and vice versa, such as changing \(D_i=\R^{n_i}_{>0}\) for our assumption to \(D_i=\R^{n_i}_{\geq 0}\) for theirs.
 
 \begin{proposition}
   For \( 0 = l \leq 1 \leq s \leq m \), the set \( C_{0, s} \cap B \) is closed if, and only if, the sets \( D_i \cup \{ \vz \},\ i = 1, \ldots, m, \) are closed.
@@ -216,7 +217,7 @@ Hence, Beck and Hallak's assumptions imply the one used in this work.
   With this aim, extend each \( \x^k_{G_i} \) to \( \x^k \in \R^n \) by defining the values in the other groups as \( \vz \).
   This sequence clearly converges to a point, \( \x \in \R^n \), that has \( \x_{G_i} \) in group \( i \) and \( \vz \) otherwise.
   Clearly, \(\x^k \in B \) and, as $s \geq 1$, \( \x^k \) also belongs to \( C_{0, s} \).
-  Therefore, \( \x \in C_{0, s} \cap B \).
+  Therefore, \( \x \in C_{0, s} \cap B \) by closedness of \(C_{0, s} \cap B\).
   Hence, \( \x_{G_i} \in D_i \cup \{ \vz \} \) as required.
 \end{proof}
 
@@ -239,7 +240,7 @@ Again, this is equivalent to the closedness of the feasible set of~\eqref{P0}, a
     \x_{G_i}^k & \text{ is a fixed point in }
     D_i,\ i = 2, \ldots, l,                   \\ \x_{G_i}^k &= \vz,\ i = l + 1, \ldots, m.
   \end{align*}
-  Note that \( \x^k \) has \( l \) active groups.
+  Note that \( \x^k \) has at least \( l-1 \) and at most \( l \) active groups.
   Now, if $\x_{G_1} = \vz$, then \( \x \) will have \( l - 1 \) active groups and then will not belong to \( C_{l, s} \).
   If \( \x_{G_1} \neq \vz \), then \( \x_{G_1} \not\in D_1 \cup \{ \vz \} \).
   In both cases, \( \x \not\in C_{l, s} \cap B \), which is a contradiction.
@@ -253,7 +254,8 @@ Again, this is equivalent to the closedness of the feasible set of~\eqref{P0}, a
   It follows that \( \x_{G_i} = \vz \).
   Moreover, for $i = 1, \ldots, a$, as \( D_i \ni \x^k_{G_i} \rightarrow \x_{G_i} \), and \( D_i \) is closed, \( \x_{G_i} \in D_i \not\ni \vz \).
   Hence, \( \x_{G_i} \neq \vz \).
-  That is, \( \x \) has the same sparsity pattern as \( \x^k \) and then belongs to $C_{l, s} \cap B$.
+  That is, \( \x \) has the same sparsity pattern as \( \x^k \) and then belongs to $C_{l, s}$.
+  Together with the definition of \(B\) and \( \x_{G_i} \in D_i \) for all \( i = 1, \ldots, a \), this implies that \( \x \in C_{l, s} \cap B \).
 \end{proof}
 
 A direct implication of such closedness is the nonemptiness of the proximal mapping defined in~\eqref{prox}.
@@ -293,10 +295,10 @@ If instead each \(D_i\) is closed, the distance from \(\vz\) to \(D_i\) is posit
 The origin of group \(i\) is then feasible only by switching the group off, through the factor \(\{\vz\}\) in \(B\).
 A nearest point of \(\x_{G_i}\) in \(D_i\) exists and is never \(\vz\), so every group can be turned on properly.
 
-Finally, for the case $l > 0$, the closedness assumption ensures that \( \vz \) is not an accumulation point of the sets $D_i,\ i = 1, \ldots, m$, of admissible nonzero values.
+Finally, for the case $l > 0$, the closedness assumption ensures that \( \vz \) is not an accumulation point of admissible nonzero values of the sets $D_i,\ i = 1, \ldots, m$.
 This is rather natural; otherwise, an infeasible point that does not satisfy the lower cardinality constraint could be approached by points that satisfy it, but with arbitrarily small values.
 This would not look natural in a real application that has lower cardinality constraints.
-If one requires a minimum number of active groups, it is quite natural that such groups should not be allowed to be arbitrarily small so that nonzero has an actual, physical meaning.
+If one requires a minimum number of active groups, it is expected that such groups should not be allowed to be arbitrarily small so that nonzero has an actual, physical meaning.
 
 The portfolio of \cref{ex:carteira} is a natural example, as \(D_i=\Delta_{n_i}\) is closed, so every sector can be activated and \(\prox_h\) is nonempty.
 A different modeling issue remains.
