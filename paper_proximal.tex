@@ -195,10 +195,10 @@ In the definition of $B$, appearing in the description of the feasible set of~\e
 The need for such closedness assumptions can be made clear by showing that they are equivalent to the closedness of the feasible set of~\eqref{P0}, a natural assumption in optimization.
 
 In fact, let us start with the case \( l = 0 \), considered initially by Beck and Hallak in~\cite{beck2018}.
-In their discussion the sets \( D_i,\ i = 1, \ldots, m, \) could contain the origin and were supposed to be closed.
-In this text, we excluded \( \vz \) from \( D_i \) and assumed that \(D_i \cup \{ \vz \} \) is closed.
+In their discussion, the sets \( D_i,\ i = 1, \ldots, m, \) could contain the origin and were supposed to be closed.
+Here, we excluded \( \vz \) from \( D_i \) and assumed that \(D_i \cup \{ \vz \} \) is closed.
 Hence, Beck and Hallak's assumptions imply the one used in this work.
-This is not a meaningful change in the scope of sets allowed, as it is always possible to replace \( D_i \) by \( D_i \cup \{ \vz \} \) and vice versa, such as changing \(D_i=\R^{n_i}_{>0}\) for our assumption to \(D_i=\R^{n_i}_{\geq 0}\) for theirs.
+But this apparent generality is not meaningful, as the results below also apply in their context by adding \( \vz \) to their version of the \( D_i \) sets, if needed.
 
 \begin{proposition}
   For \( 0 = l \leq 1 \leq s \leq m \), the set \( C_{0, s} \cap B \) is closed if, and only if, the sets \( D_i \cup \{ \vz \},\ i = 1, \ldots, m, \) are closed.
@@ -217,7 +217,7 @@ This is not a meaningful change in the scope of sets allowed, as it is always po
   With this aim, extend each \( \x^k_{G_i} \) to \( \x^k \in \R^n \) by defining the values in the other groups as \( \vz \).
   This sequence clearly converges to a point, \( \x \in \R^n \), that has \( \x_{G_i} \) in group \( i \) and \( \vz \) otherwise.
   Clearly, \(\x^k \in B \) and, as $s \geq 1$, \( \x^k \) also belongs to \( C_{0, s} \).
-  Therefore, \( \x \in C_{0, s} \cap B \) by closedness of \(C_{0, s} \cap B\).
+  Therefore, \( \x \in C_{0, s} \cap B \).
   Hence, \( \x_{G_i} \in D_i \cup \{ \vz \} \) as required.
 \end{proof}
 
@@ -248,14 +248,13 @@ Again, this is equivalent to the closedness of the feasible set of~\eqref{P0}, a
 
   Now, the converse implication.
   Assume that the sets \( D_i,\ i = 1, \ldots, m \) are closed.
-  Let \( \{ \x^k \} \) be a sequence in $C_{l, s} \cap B$ converging to \( \x \).
+  Let \( \{ \x^k \} \) be a sequence in $C_{l, s} \cap B$ converging to \( \x \in B\), as \( B \) is clearly closed.
   By restricting to a subsequence, we may assume without loss of generality that the active groups of all \( \x^k \) are precisely the first \(a,\ l \leq a \leq s \).
   Hence, for all $i = a + 1, \ldots, m$ and all \( k \), \( \vz = \x^k_{G_i} \rightarrow \x_{G_i} \).
   It follows that \( \x_{G_i} = \vz \).
-  Moreover, for $i = 1, \ldots, a$, as \( D_i \ni \x^k_{G_i} \rightarrow \x_{G_i} \), and \( D_i \) is closed, \( \x_{G_i} \in D_i \not\ni \vz \).
+  Moreover, for $i = 1, \ldots, a$, as \( D_i \ni \x^k_{G_i} \rightarrow \x_{G_i} \) and, as \( D_i \) is closed, it follows that \( \x_{G_i} \in D_i \not\ni \vz \).
   Hence, \( \x_{G_i} \neq \vz \).
-  That is, \( \x \) has the same sparsity pattern as \( \x^k \) and then belongs to $C_{l, s}$.
-  Together with the definition of \(B\) and \( \x_{G_i} \in D_i \) for all \( i = 1, \ldots, a \), this implies that \( \x \in C_{l, s} \cap B \).
+  That is, \( \x \) has the same sparsity pattern as \( \x^k \) and then belongs to $C_{l, s}$ and, therefore, to \( C_{l, s} \cap B \).
 \end{proof}
 
 A direct implication of such closedness is the nonemptiness of the proximal mapping defined in~\eqref{prox}.
@@ -295,7 +294,7 @@ If instead each \(D_i\) is closed, the distance from \(\vz\) to \(D_i\) is posit
 The origin of group \(i\) is then feasible only by switching the group off, through the factor \(\{\vz\}\) in \(B\).
 A nearest point of \(\x_{G_i}\) in \(D_i\) exists and is never \(\vz\), so every group can be turned on properly.
 
-Finally, for the case $l > 0$, the closedness assumption ensures that \( \vz \) is not an accumulation point of admissible nonzero values of the sets $D_i,\ i = 1, \ldots, m$.
+Finally, for the case $l > 0$, the closedness assumption ensures that \( \vz \) is not an accumulation point of $D_i,\ i = 1, \ldots, m$, the sets of nonzero admissible values.
 This is rather natural; otherwise, an infeasible point that does not satisfy the lower cardinality constraint could be approached by points that satisfy it, but with arbitrarily small values.
 This would not look natural in a real application that has lower cardinality constraints.
 If one requires a minimum number of active groups, it is expected that such groups should not be allowed to be arbitrarily small so that nonzero has an actual, physical meaning.
@@ -341,15 +340,16 @@ The origin remains again available by switching the whole group off through \(B\
     \label{regress2}
     \min_{\x\in\R^n}\frac{1}{2}\|\A\x-\bv\|^2+\lambda\|\x\|_0+\chi_{C_{l,s}}(\x),
   \end{equation}
-  where \(\A\in \R^{p \times n}\), \(\bv\in \R^p\).  
+  where \(\A\in \R^{p \times n}\), \(\bv\in \R^p\).
   This is a small variation of the classical subset of regression variables~\cite{miller1984} where we consider jointly the $\ell_0$ penalty and two-sided cardinality constraints.
   The problem is NP-hard~\cite{natarajan1995} and is typically tackled using convex approximation, as in LASSO~\cite{tibshirani1996}.
   Proximal gradient approaches appear in~\cite{blumensath2008,beck2018} and direct mixed-integer optimization formulations can be found in~\cite{bertsimas2016}.
   A novelty in the model above is the presence of the lower cardinality constraint, which may introduce a priori information into the model, alleviating the need for fine-tuning the penalty parameter $\lambda$.
-  Technically, to make this model fit~\eqref{P0}, it is necessary to add a prohibited open interval containing \( 0 \) on the active variables whenever \( l > 0 \). See the discussion in~\Cref{sec:emptyfix}.
+  Technically, to make this model fit~\eqref{P0}, it is necessary to add a prohibited open interval containing \( 0 \) on the active variables whenever \( l > 0 \).
+  See the discussion in~\Cref{sec:emptyfix}.
 
-%   The formulation was motivated by infrared spectroscopy on the IMBUI Abeamline (SIRIUS/LNLS), where a sparse spectrogram is recovered from measurements.
-%   If a prior estimate of the number of spectral lines is available --- from previous experiments or from the literature --- it can be encoded as the lower bound \(l\), so that the \(\ell_0\) penalty is not free to discard known structure.
+  %   The formulation was motivated by infrared spectroscopy on the IMBUI Abeamline (SIRIUS/LNLS), where a sparse spectrogram is recovered from measurements.
+  %   If a prior estimate of the number of spectral lines is available --- from previous experiments or from the literature --- it can be encoded as the lower bound \(l\), so that the \(\ell_0\) penalty is not free to discard known structure.
 \end{example}
 
 \section{Notation}
@@ -590,7 +590,7 @@ The argument follows \cite[Theorem~3.2]{beck2018} closely: the same comparison o
     |I_1(\U) \cap I_{2\lambda}^>(\x)|+|I_1(\y) \cap I_{2\lambda}^\leq(\x)|
      & \geq|I_1(\y) \cap I_{2\lambda}^>(\x)|+|I_1(\y) \cap I_{2\lambda}^\leq(\x)| \eqjust{greaterind} \\
      & =|I_1(\y)|
-    \\   & \geq |I_1(\U)|
+    \\    & \geq |I_1(\U)|
     \\&=|I_1(\U) \cap I_{2\lambda}^>(\x)|+|I_1(\U)\cap I_{2\lambda}^\leq(\x)\cap I_{[l]}^\geq(\x)| ,
   \end{align*}
   or equivalently,
